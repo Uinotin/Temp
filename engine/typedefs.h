@@ -1,6 +1,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#define OPENGL_DEBUG_OUTPUT 1
+
 typedef size_t (*Command)(struct Rend *, char *);
 
 typedef TempFloat GLfloat;

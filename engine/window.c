@@ -4,11 +4,8 @@
 #include <stdio.h>
 
 #include "window.h"
-//#include "scene.h"
 #include "glstate.h"
 
-//struct Scene *currentScene;
-//pthread_mutex_t dataMutex;
 pthread_barrier_t barrier;
 
 static void error_callback(int error, const char* description)
@@ -48,9 +45,9 @@ static void APIENTRY openglCallbackFunction(GLenum source, GLenum type, GLuint i
 }
 #endif
 
-GLFWwindow* window;
-void InitWindow(void)
+void InitWindow(Window *window)
 {
+  GLFWwindow* glfwWindow;
   //currentScene = 0;
     glfwSetErrorCallback(error_callback);
 
@@ -63,20 +60,20 @@ void InitWindow(void)
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    window = glfwCreateWindow(1280, 720, "Temp", NULL, NULL);
-    if (!window)
+    glfwWindow = glfwCreateWindow(1280, 720, "Temp", NULL, NULL);
+    if (!glfwWindow)
     {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
 
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(glfwWindow);
  
     glfwSwapInterval(1);
 
-    glfwSetKeyCallback(window, key_callback);
+    glfwSetKeyCallback(glfwWindow, key_callback);
 
-    InitRenderer();
+    window->systemWindow = (char *)glfwWindow;
 
 #if OPENGL_DEBUG_OUTPUT
     if(glDebugMessageCallback)
@@ -94,21 +91,26 @@ void InitWindow(void)
     pthread_barrier_init(&barrier, NULL, 2);
 }
 
-void WindowMainLoop(void)
+int ShouldClose(Window *window)
 {
-  while (!glfwWindowShouldClose(window))
+  return glfwWindowShouldClose((GLFWwindow *)(window->systemWindow));
+}
+
+void WindowMainLoop(Window *window)
+{
+  GLFWwindow *glfwWindow = (GLFWwindow *)window->systemWindow;
+  while (!glfwWindowShouldClose(glfwWindow))
   {
-    glClear(GL_COLOR_BUFFER_BIT);
+    DrawFrame(&(window->rend));
 
-
-    glfwSwapBuffers(window);
+    glfwSwapBuffers(glfwWindow);
     
     glfwPollEvents();
 
     SyncThreads();
   }
 
-  glfwDestroyWindow(window);
+  glfwDestroyWindow(glfwWindow);
 
   glfwTerminate();
 }

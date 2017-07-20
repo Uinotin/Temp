@@ -15,6 +15,12 @@ size_t GenBuffer(struct Rend *rend, char *data)
   return sizeof(TempUInt);
 }
 
+void AppendGenBuffer(struct CommandQueue *commandQueue, TempUInt handle)
+{
+  //assert(commandQueue->commandData.queueLen + sizeof(Command) + sizeof (TempUInt) < commandQueue->queueSize);
+  commandQueue->queueData.queue 
+}
+
 size_t BindBuffer(struct Rend *rend, char *data)
 {
   GLenum bufferEnum = *((GLenum *)data);

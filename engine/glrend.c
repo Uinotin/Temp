@@ -5,32 +5,81 @@ void InitRendGL(struct GLRend *rend, unsigned int nHandles)
 {
   rend->nHandles = nHandles;
   rend->handles = (GLuint *)malloc(nHandles*sizeof(GLuint));
-  rend->commandQueue = (struct CommandQueue *)malloc(sizeof(struct CommandQueue));
-  StartCommandQueue(rend->commandQueue);
-}
 
-struct CommandQueue *GetRendCommandQueueGL(struct GLRend *rend)
-{
-  return &(rend->commandQueue);
-}
+  rend->firstCommandQueue = 0;
+  rend->lastCommandQueue = 0;
 
-void DrawFrameGL(struct GLRend *rend)
-{
-  LockCommandQueue(rend->commandQueue);
+  rend->commandQueueListMutex = PTHREAD_MUTEX_INITIALIZER;
 
   {
-    char *queue;
-    unsigned int i, queueLen = rend->commandQueue.queueLen;
-    queue = rend->commandQueue.queue;
-    while (i <= queueLen)
+    GLenum err;
+    glewExperimental = GL_TRUE;
+    err = glewInit();
+    if (GLEW_OK != err)
     {
-      unsigned int currentCommandSize = sizeof(Command) + (*((Command)queue)(rend, (void *)(queue + sizeof(Command))));
-      queue += currentCommandSize;
-      i += currentCommandSize;
+      fprintf(stderr, "Error: %s\n", glewGetErrorString(err)); 
     }
   }
-  
-  UnlockCommandQueue(rend->commandQueue);
+}
+
+
+
+void ExecCommandsGL(struct GLRend *rend)
+{
+  struct CommandQueue *commandQueue = rend->firstCommandQueue;
+  while (commandQueue)
+  {
+    char *queue;
+    Command *commands;
+    unsigned int j, queueLen;
+    queue = commandQueue->queue;
+      
+    nCommands = commandQueue->queueData.nCommands;
+    for (j = 0; j < nCommands; ++j)
+    {
+      unsigned int currentCommandSize = sizeof(Command) + (*(commands)(rend, (void *)(queue + sizeof(Command))));
+      commands += sizeof(Command);
+      queue += currentCommandSize;
+    }
+    LockCommandQueue(commandQueue);
+    commandQueue = commandQueue->next;
+    UnlockCommandQueue(commandQueue->prev);
+  }
+}
+
+
+void AppendCommandQueue(struct GLRend *rend, struct CommandQueue *commandQueue)
+{
+  struct CommandQueue *prev;
+  pthread_mutex_lock(rend->commandQueueListMutex);
+  prev = rend->lastCommandQueue;
+  LockCommandQueue(commandQueue);
+  if(prev)
+    prev->next = commandQueue;
+  commandQueue->prev = rend->lastCommandQueue;
+  commandQueue->next = 0;
+  rend->lastCommandQueue = commandQueue;
+  if(prev)
+    UnlockCommandQueue(prev);
+  else
+    rend->firstCommandQueue = commandQueue;
+    
+  pthread_mutex_unlock(rend->commandQueueListMutex);
+}
+
+void FinishCommands(struct GLRend *rend)
+{
+  UnlockCommandQueue(rend->last);
+}
+
+struct CommandQueue *GetFirstCommandQueue(struct GLRend *rend)
+{
+  return rend->firstCommandQueue;
+}
+
+void SetFirstCommandQueue(struct GLRend *rend, struct CommandQueue *commandQueue)
+{
+  rend->firstCommandQueue = commandQueue;
 }
 
 GLuint GetGLHandle(struct GLRend *rend, unsigned int handle)

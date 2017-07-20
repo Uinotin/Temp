@@ -10,14 +10,20 @@ void InitRend(struct Rend *rend, unsigned int nHandles)
   rend->rend = glRend;
 }
 
-struct CommandQueue *GetRendCommandQueue(struct Rend *rend)
+void DestroyRend(struct Rend *rend)
 {
-  return GetRendCommandQueueGL((struct GLRend *)rend->rend);
+  DestroyRendGL((struct GLRend *)(rend->rend));
+  free(rend->rend);
 }
 
-void DrawFrame(struct Rend *rend)
+struct CommandQueue **GetRendCommandQueues(struct Rend *rend)
 {
-  DrawFrameGL((struct GLRend *)rend->rend);
+  return GetRendCommandQueuesGL((struct GLRend *)rend->rend);
+}
+
+void ExecCommands(struct Rend *rend)
+{
+  ExecCommandsGL((struct GLRend *)rend->rend);
 }
 
 unsigned int GenHandle(struct Rend *rend)

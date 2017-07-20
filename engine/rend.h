@@ -9,8 +9,8 @@ struct Rend
 
 void InitRend(struct Rend *rend, unsigned int nHandles);
 
-struct CommandQueue *GetRendCommandQueue(struct Rend *rend);
+void DestroyRend(struct Rend *rend);
 
-void DrawFrame(struct Rend *rend);
+void ExecCommands(struct Rend *rend);
 
 #endif

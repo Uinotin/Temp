@@ -9,15 +9,6 @@ void InitRenderer(void)
   glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uboOffsetAlignment);
   assert(uboOffsetAlignment <= 1024);
   
-  {
-    GLenum err;
-    glewExperimental = GL_TRUE;
-    err = glewInit();
-    if (GLEW_OK != err)
-    {
-      fprintf(stderr, "Error: %s\n", glewGetErrorString(err)); 
-    }
-  }
 }
 
 int GetMaxTextures(void)

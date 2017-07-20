@@ -1,16 +1,17 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#define OPENGL_DEBUG_OUTPUT 1
+#include "rend.h"
 
-//#include "scene.h"
+struct Window
+{
+  struct Rend rend;
+  char *systemWindow;
+};
 
-#include "../dummy.h"
-
-void InitWindow(void);
-void WindowMainLoop(void);
+void InitWindow(struct Window *window);
+int ShouldClose(struct Window *window);
+void WindowMainLoop(strict Window *window);
 void SyncThreads(void);
-//void MakeSceneCurrent(struct Scene *scene);
-//void LoadScenes(void)
 
 #endif

@@ -7,20 +7,14 @@
 #include "engine/window.h"
 
 
-int shouldClose;
-
-
-void LoadData(void);
-void LoadData(void)
-{
-}
+struct Window window;
 
 void *WorkThread(void *arg);
 void *WorkThread(void *arg)
 {
   float delta;
   clock_t oldTime = clock();
-  while(!shouldClose)
+  while(!ShouldClose(&window))
   {
     clock_t time;
 
@@ -35,22 +29,19 @@ void *WorkThread(void *arg)
   return 0;
 }
 
-
 int main(void)
 {
     pthread_t workThreadId;
 
-    InitWindow();
+    InitWindow(&window);
 
-    LoadData();
-
-    shouldClose = 0;
+    InitRend(&(window.rend));
+    
     pthread_create(&workThreadId, 0, WorkThread, 0);
 
     
-    WindowMainLoop();
+    WindowMainLoop(&window);
     
-    shouldClose = 1;
     
     pthread_join(workThreadId, 0);
 

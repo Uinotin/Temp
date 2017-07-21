@@ -10,6 +10,7 @@ struct QueueData
   unsigned int queueLen;
   Command *commands;
   unsigned int nCommands;
+  unsigned int maxCommands;
 };
 
 struct CommandQueue

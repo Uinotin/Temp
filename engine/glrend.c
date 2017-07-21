@@ -1,5 +1,5 @@
 #include "glrend.h"
-#include "glcommands.h"
+#include "commands.h"
 
 void InitRendGL(struct GLRend *rend, unsigned int nHandles)
 {

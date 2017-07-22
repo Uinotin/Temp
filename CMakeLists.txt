@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.2)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic -std=gnu99 -Werror -Wmissing-prototypes -Wstrict-prototypes -Wno-unused-parameter")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -save-temps -D_DEBUG -D_NDEBUG")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -save-temps -D_DEBUG -DNDEBUG")
 add_subdirectory(engine)
-add_executable(temp main.c)
-target_link_libraries(temp engine)
+add_subdirectory(demos)

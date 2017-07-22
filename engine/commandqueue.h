@@ -8,6 +8,7 @@ struct QueueData
 {
   TempChar *queue;
   unsigned int queueLen;
+  unsigned int queueArraySize;
   Command *commands;
   unsigned int nCommands;
   unsigned int maxCommands;
@@ -16,9 +17,6 @@ struct QueueData
 struct CommandQueue
 {
   struct QueueData queueData;
-  unsigned int queueArraySize;
-  unsigned int commandsArraySize;
-  int isActive;
 
   struct CommandQueue *prev;
   struct CommandQueue *next;

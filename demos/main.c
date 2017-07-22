@@ -4,7 +4,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "engine/window.h"
+#include "../engine/window.h"
 
 
 struct Window window;
@@ -13,11 +13,14 @@ void *WorkThread(void *arg);
 void *WorkThread(void *arg)
 {
   {
+    struct CommandQueue commandQueue;
     const TempFloat triangle[] =
       {
 	0.0f, 0.5f,
-	
-      }
+	0.5f, 0.0f,
+	-0.5f, 0.0f
+      };
+    
   }
   {
     float delta;

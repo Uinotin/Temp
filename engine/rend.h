@@ -1,16 +1,25 @@
-#ifndef REND_H
-#define REND_H
+#ifndef GLREND_H
+#define GLREND_H
+#include <pthread.h>
+#include "commandqueue.h"
 
-//Mimicing an interface. Not sure if this is a good idea.
 struct Rend
 {
-  void *rend;
+  struct CommandQueueList commandQueueList;
+
+  TempUInt *handles;
+  unsigned int nHandles;
 };
 
 void InitRend(struct Rend *rend, unsigned int nHandles);
-
 void DestroyRend(struct Rend *rend);
 
 void ExecCommands(struct Rend *rend);
+
+void AppendCommandQueue(struct Rend *rend);
+
+TempUInt GetGLHandle(struct Rend *rend, unsigned int handle);
+void SetGLHandle(struct Rend *rend, unsigned int handle, TempUInt GLhandle);
+
 
 #endif

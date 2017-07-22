@@ -60,3 +60,44 @@ void UnlockCommandQueue(struct CommandQueue *commandQueue)
 {
   pthread_mutex_unlock(commandQueue->mutex);
 }
+
+void StartCommandQueueList(struct CommandQueueList *commandQueueList)
+{
+  commandQueueList->first = 0;
+  commandQueueList->last = 0;
+
+  commandQueueList->mutex = PTHREAD_MUTEX_INITIALIZER;
+}
+
+void LockCommandQueueList(struct CommandQueueList *commandQueueList)
+{
+  pthread_mutex_lock(commandQueueList->mutex);
+}
+
+void UnlockCommandQueueList(struct CommandQueueList *commandQueueList)
+{
+  pthread_mutex_unlock(commandQueueList->mutex);
+}
+
+void SyncCommandQueueList(struct CommandQueueList *dst, struct CommandQueueList *src)
+{
+  struct CommandQueue *queue;
+  LockCommandQueueList(dst);
+  queue = src->first;
+  if (queue)
+  {
+    LockCommandQueue(queue);
+    dst->first = src->first->twin;
+    dst->last = src->last->twin;
+  }
+  else
+  {
+    dst->first = 0;
+    dst->last = 0;
+  }
+
+  while(queue)
+  {
+    
+  }
+}

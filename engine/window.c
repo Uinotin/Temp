@@ -108,6 +108,7 @@ void WindowMainLoop(Window *window)
     glfwPollEvents();
 
     SyncThreads();
+    SyncThreads();
   }
 
   glfwDestroyWindow(glfwWindow);

@@ -11,12 +11,14 @@ struct Rend
   unsigned int nHandles;
 };
 
-void InitRend(struct Rend *rend, unsigned int nHandles);
+void InitRend(struct Rend *rend);
 void DestroyRend(struct Rend *rend);
 
 void ExecCommands(struct Rend *rend);
 
-void AppendCommandQueue(struct Rend *rend);
+void StartAppend(struct Rend *rend);
+void Append(struct Rend *rend, struct CommandQueue *commandQueue);
+void FinishAppend(struct Rend *rend);
 
 TempUInt GetGLHandle(struct Rend *rend, unsigned int handle);
 void SetGLHandle(struct Rend *rend, unsigned int handle, TempUInt GLhandle);

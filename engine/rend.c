@@ -1,11 +1,10 @@
 #include "glrend.h"
 #include "commands.h"
 
-void InitRend(struct Rend *rend, unsigned int nHandles)
+void InitRend(struct Rend *rend)
 {
-  rend->nHandles = nHandles;
-  rend->handles = (GLuint *)malloc(nHandles*sizeof(GLuint));
-
+  rend->nHandles = 0;
+  rend->handles = 0;
 
   {
     GLenum err;
@@ -18,11 +17,22 @@ void InitRend(struct Rend *rend, unsigned int nHandles)
   }
 }
 
+void DestroyRend(struct Rend *rend)
+{
+  if(rend->handles)
+    free(handles);
+}
 
+void AllocHandles(struct Rend *rend, TempUInt nHandles)
+{
+  rend->handles = (GLuint *)malloc(nHandles*sizeof(GLuint));
+  rend->nHandles = nHandles;
+}
 
 void ExecCommands(struct Rend *rend)
 {
   struct CommandQueue *commandQueue = rend->commandQueueList.first;
+  
   while (commandQueue)
   {
     char *queue;
@@ -43,8 +53,11 @@ void ExecCommands(struct Rend *rend)
   }
 }
 
-
-void AppendCommandQueue(struct Rend *rend, struct CommandQueue *commandQueue)
+void StartAppend(struct Rend *rend)
+{
+  LockCommandQueue(rend->last);
+}
+void Append(struct Rend *rend, struct CommandQueue *commandQueue)
 {
   struct CommandQueue *prev;
   pthread_mutex_lock(rend->commandQueueList.mutex);
@@ -63,7 +76,7 @@ void AppendCommandQueue(struct Rend *rend, struct CommandQueue *commandQueue)
   pthread_mutex_unlock(rend->commandQueueList.mutex);
 }
 
-void FinishCommands(struct Rend *rend)
+void FinishAppend(struct Rend *rend)
 {
   UnlockCommandQueue(rend->last);
 }
@@ -78,12 +91,13 @@ void SetFirstCommandQueue(struct Rend *rend, struct CommandQueue *commandQueue)
   rend->commandQueueList.first = commandQueue;
 }
 
+//Could try making a more general way of using objects with handles, but I'll get to that later.
 GLuint GetGLHandle(struct Rend *rend, unsigned int handle)
 {
-  return rend->handles[handle];
+  return rend->handles[handle - 1];
 }
 
 void SetGLHandle(struct Rend *rend, unsigned int handle, GLuint GLhandle)
 {
-  rend->handles[handle] = GLhandle;
+  rend->handles[handle - 1] = GLhandle;
 }

@@ -24,9 +24,9 @@ struct CommandQueue
 
   struct CommandQueue *prev;
   struct CommandQueue *next;
-  struct CommandQueue *twin;
+  struct CommandQueue *twin; 
 
-  int isWriteOnly;
+  int syncWithTwin;
 
   pthread_mutex_t mutex;
 };

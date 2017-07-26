@@ -5,15 +5,17 @@
 #include <unistd.h>
 
 #include "../engine/window.h"
-
+#include "../engine/buffer.h"
+#include "../engine/commands.h"
 
 struct Window window;
+struct Rend *rend;
 
 void *WorkThread(void *arg);
 void *WorkThread(void *arg)
 {
   struct CommandQueue commandQueue;
-  struct QueueData *queueData = queueData;
+  struct QueueData *queueData = &(commandQueue.queueData);
   struct Buffer buffer;
   TempUInt VAO, program;
   {
@@ -24,11 +26,11 @@ void *WorkThread(void *arg)
 	-0.5f, 0.0f
       };
 
-    const TempChar vShader[] = "#version 420\nlayout(location = 0) in vec2 pos;void main(void){gl_Position = vec4(pos.x, pos.y, -0.1, 1.0);}";
-    const TempChar fShader[] = "#version 420\nout vec4 oColor;void main(void){oColor = vec4(1.0, 0.0, 1.0, 1.0);}";
-    const size_t indicesLensAndOffsets[] = {0, 0, 2};
+    TempChar vShader[] = "#version 420\nlayout(location = 0) in vec2 pos;void main(void){gl_Position = vec4(pos.x, pos.y, -0.1, 1.0);}\n";
+    TempChar fShader[] = "#version 420\nout vec4 oColor;void main(void){oColor = vec4(1.0, 0.0, 1.0, 1.0);}\n";
+    TempUInt indicesLensAndOffsets[] = {0, 0, 2};
 
-    AllocHandles(&(window.rend), 4, 1, 1);
+    AllocHandles(rend, 4, 1, 1);
     StartCommandQueue(&commandQueue, 7,
                       6 * sizeof(TempUInt) +
 		      sizeof(TempEnum) +
@@ -38,28 +40,28 @@ void *WorkThread(void *arg)
 		      sizeof(fShader) +
 		      sizeof(indicesLensAndOffsets));
 
-    CreateBuffer(&(window.rend), &buffer, TEMP_ARRAY_BUFFER, sizeof(triangle));
+    CreateBuffer(rend, &buffer, TEMP_ARRAY_BUFFER, sizeof(triangle));
 
-    VAO = GetVAOHandle(&(window.rend));
+    VAO = GetVAOHandle(rend);
     BindVAO(queueData, VAO);
-    UploadBuffer(&commandQueue, &buffer);
+    UploadBuffer(queueData, &buffer);
     AttribPointers(queueData, sizeof(TempFloat) * 2, 1, indicesLensAndOffsets);
     BindVAO(queueData, 0);
-    program = GetProgramHandle(&(window.rend));
+    program = GetProgramHandle(rend);
     LoadProgram(queueData, program, sizeof(vShader), sizeof(fShader), vShader, fShader);
 
     SyncThreads();
-    StartAppend(&(window.rend));
+    StartAppend(rend);
     SyncThreads();
-    Append(&(window.rend), &commandQueue);
-    FinishAppend(&(window.rend));
+    Append(rend, &commandQueue);
+    FinishAppend(rend);
     
     SyncThreads();
 
     EmptyCommandQueue(&commandQueue);
     BindVAO(queueData, VAO);
     UseProgram(queueData, program);
-    Draw(queueData, TEMP_TRIANGLES, 0, 3);
+    DrawArrays(queueData, TEMP_TRIANGLES, 0, 3);
     UseProgram(queueData, 0);
     BindVAO(queueData, 0);
 
@@ -91,14 +93,13 @@ int main(void)
 
     InitWindow(&window);
 
-    InitRend(&(window.rend));
+    rend = &(window.rend);
+
+    InitRend(rend);
     
     pthread_create(&workThreadId, 0, WorkThread, 0);
 
-    
     WindowMainLoop(&window);
-    
-    DestroyWindow(&(window.rend));
     
     pthread_join(workThreadId, 0);
 

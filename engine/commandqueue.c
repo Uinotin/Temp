@@ -1,11 +1,11 @@
 #include <stdlib.h>
-#include <stdio.h>
+#include <string.h>
 #include "commandqueue.h"
 
 
 void StartCommandQueue(struct CommandQueue *commandQueue, unsigned int commandsArraySize, unsigned int queueArraySize)
 {
-  commandQueue->mutex = PTHREAD_MUTEX_INITIALIZER;
+  pthread_mutex_init(&(commandQueue->mutex), 0);
 
   commandQueue->queueData.queue = (char *)malloc(queueArraySize);
   commandQueue->queueData.commands = (Command *)malloc(sizeof(Command)*commandsArraySize);
@@ -68,7 +68,7 @@ void StartCommandQueueList(struct CommandQueueList *commandQueueList)
   commandQueueList->first = 0;
   commandQueueList->last = 0;
 
-  commandQueueList->mutex = PTHREAD_MUTEX_INITIALIZER;
+  pthread_mutex_init(&(commandQueueList->mutex), 0);
 }
 
 void LockCommandQueueList(struct CommandQueueList *commandQueueList)

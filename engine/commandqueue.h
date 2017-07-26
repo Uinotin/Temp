@@ -48,6 +48,8 @@ void AppendCommandData(struct CommandQueue *dest, struct QueueData *source);
 void LockCommandQueue(struct CommandQueue *commandQueue);
 void UnlockCommandQueue(struct CommandQueue *commandQueue);
 
+
+void StartCommandQueueList(struct CommandQueueList *commandQueueList);
 void LockCommandQueueList(struct CommandQueueList *commandQueueList);
 void UnlockCommandQueueList(struct CommandQueueList *commandQueueList);
 

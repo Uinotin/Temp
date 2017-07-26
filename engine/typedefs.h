@@ -11,9 +11,11 @@ typedef GLfloat TempFloat;
 typedef GLuint TempUInt;
 typedef GLint TempInt;
 typedef GLchar TempChar;
+typedef GLsizei TempSizei;
 
 enum tempEnum
 {
+  TEMP_TRIANGLES = GL_TRIANGLES,
   TEMP_ARRAY_BUFFER = GL_ARRAY_BUFFER,
   TEMP_COLOR_BUFFER_BIT = GL_COLOR_BUFFER_BIT
 };

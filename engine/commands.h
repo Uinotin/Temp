@@ -18,4 +18,10 @@ void AttribPointers(struct QueueData *queueData, size_t stride, TempUInt nAttrib
 
 void LoadProgramFunc(char **data);
 void LoadProgram(struct QueueData *queueData, TempUInt handle, size_t vShaderLen, size_t fShaderLen, char *vShader, char *fShader);
+
+void UseProgramFunc(char **data);
+void UseProgram(struct QueueData *queueData, TempUInt handle);
+
+void DrawArraysFunc(char **data);
+void DrawArrays(struct QueueData *queueData, TempEnum drawType, TempInt start, TempSizei len);
 #endif

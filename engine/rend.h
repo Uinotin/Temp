@@ -31,7 +31,7 @@ void InitRend(struct Rend *rend);
 
 void DestroyRend(struct Rend *rend);
 
-size_t GenHandlesFunc(char *data);
+void GenHandlesFunc(char **data);
 
 void GenHandles(struct QueueData *queueData, struct Handles *handles);
 
@@ -55,5 +55,7 @@ struct CommandQueue *GetFirstCommandQueue(struct Rend *rend);
 void SetFirstCommandQueue(struct Rend *rend, struct CommandQueue *commandQueue);
 
 void CreateBuffer(struct Rend *rend, struct Buffer *buffer, TempEnum bufferType, size_t bufferSize);
+
+void SyncThreads(void);
 
 #endif

@@ -24,7 +24,7 @@ void AppendCommand(struct QueueData *queueData, Command command)
 
 void ClearFunc(char **data)
 {
-  GLenum bitEnum = *((GLenum *)*data);
+  GLenum bitEnum = *((GLenum *)(*data));
   glClear(bitEnum);
   *data += sizeof(GLenum);
 }
@@ -37,7 +37,7 @@ void Clear(struct QueueData *queueData, TempEnum bitEnum)
 
 void BindVAOFunc(char **data)
 {
-  glBindVertexArray(*((TempUInt *)*data));
+  glBindVertexArray(*((TempUInt *)(*data)));
   *data += sizeof(TempUInt);
 }
 void BindVAO(struct QueueData *queueData, TempUInt handle)
@@ -52,20 +52,18 @@ void AttribPointersFunc(char **data)
   size_t stride;
   TempUInt nAttributes;
   TempUInt *indicesLensAndOffsets;
-  char *dataPointer = *data;
-  stride = *((size_t *)dataPointer);
-  dataPointer += sizeof(TempUInt);
-  nAttributes = *((TempUInt *)dataPointer);
-  dataPointer += sizeof(TempUInt);
-  indicesLensAndOffsets = (TempUInt *)dataPointer;
+  stride = *((size_t *)(*data));
+  *data += sizeof(size_t);
+  nAttributes = *((TempUInt *)(*data));
+  *data += sizeof(TempUInt);
+  indicesLensAndOffsets = (TempUInt *)(*data);
+  *data += sizeof(TempUInt)*nAttributes*3;
 
   for (i = 0; i < nAttributes; ++i)
   {
     glVertexAttribPointer(indicesLensAndOffsets[0], indicesLensAndOffsets[1], GL_FLOAT, GL_FALSE, stride, (char*)0 + indicesLensAndOffsets[2]);
     indicesLensAndOffsets += 3;
   }
-
-  *data += 2 * sizeof(TempUInt) + sizeof(TempUInt)*nAttributes*3;
 }
 void AttribPointers(struct QueueData *queueData, size_t stride, TempUInt nAttributes, TempUInt *indicesLensAndOffsets)
 {
@@ -75,10 +73,10 @@ void AttribPointers(struct QueueData *queueData, size_t stride, TempUInt nAttrib
   AppendCommand(queueData,&AttribPointersFunc);
 }
 
-static GLuint CompileShader(const GLchar **shaderSource, GLenum shaderType)
+static GLuint CompileShader(const GLchar **shaderSource, GLenum shaderType, GLint len)
 {
-  shader = glCreateShader(shaderType);
-  glShaderSource(shader, 1, (const GLchar **)&shaderSource, NULL);
+  GLuint shader = glCreateShader(shaderType);
+  glShaderSource(shader, 1, shaderSource, &len);
   glCompileShader(shader);
   {
     GLint compiled;
@@ -100,31 +98,30 @@ static GLuint CompileShader(const GLchar **shaderSource, GLenum shaderType)
       shader = 0;
     }
   }
-  *data += shader;
+  return shader;
 }
 
 void LoadProgramFunc(char **data)
 {
-  TempChar *vShader, *fShader;
+  const TempChar *vShader, *fShader;
   TempUInt handle, vHandle, fHandle;
   size_t vShaderLen, fShaderLen;
-  char *dataPointer = *data;
-  handle = *((TempUInt *)dataPointer);
-  dataPointer += sizeof(TempUInt);
-  vShaderLen = *((size_t *)dataPointer);
-  dataPointer += sizeof(size_t);
-  fShaderLen = *((size_t *)dataPointer);
-  dataPointer += sizeof(size_t);
-  vShader = (TempChar *)dataPointer;
-  dataPointer += sizeof(TempChar) * vShaderLen;
-  fShader = (TempChar *)dataPointer;
+  handle = *((TempUInt *)(*data));
+  (*data) += sizeof(TempUInt);
+  vShaderLen = *((size_t *)(*data));
+  (*data) += sizeof(size_t);
+  fShaderLen = *((size_t *)(*data));
+  (*data) += sizeof(size_t);
+  vShader = (const TempChar *)(*data);
+  (*data) += sizeof(TempChar) * vShaderLen;
+  fShader = (const TempChar *)(*data);
+  (*data) += sizeof(TempChar) * fShaderLen;
 
-  vHandle = CompileShader(vShader, GL_VERTEX_SHADER);
-  fHandle = CompileShader(fShader, GL_FRAGMENT_SHADER);
+
+  vHandle = CompileShader(((const GLchar **)&vShader), GL_VERTEX_SHADER, (GLint)vShaderLen);
+  fHandle = CompileShader(((const GLchar **)&fShader), GL_FRAGMENT_SHADER, (GLint)fShaderLen);
   glAttachShader(handle, vHandle);
   glAttachShader(handle, fHandle);
-
-  *data += sizeof(TempUInt) + sizeof(size_t) * 2 + sizeof(TempChar) * fShaderLen + sizeof(TempChar) * vShaderLen;
 }
 void LoadProgram(struct QueueData *queueData, TempUInt handle, size_t vShaderLen, size_t fShaderLen, TempChar *vShader, TempChar *fShader)
 {
@@ -138,12 +135,34 @@ void LoadProgram(struct QueueData *queueData, TempUInt handle, size_t vShaderLen
 
 void UseProgramFunc(char **data)
 {
-  glUseProgram(*((TempUInt *)*data));
+  glUseProgram(*((TempUInt *)(*data)));
   *data += sizeof(TempUInt);
 }
 
 void UseProgram(struct QueueData *queueData, TempUInt handle)
 {
-  AppendParameter(queueData, handle, sizeof(TempUInt));
+  AppendParameter(queueData, &handle, sizeof(TempUInt));
   AppendCommand(queueData,&UseProgramFunc);
+}
+
+void DrawArraysFunc(char **data)
+{
+  TempEnum drawType;
+  TempInt start;
+  TempSizei len;
+  drawType = *((TempEnum *)(*data));
+  *data += sizeof(TempEnum);
+  start = *((TempInt *)(*data));
+  *data += sizeof(TempInt);
+  len = *((TempSizei *)(*data));
+  *data += sizeof(TempSizei);
+  glDrawArrays(drawType, start, len);
+}
+
+void DrawArrays(struct QueueData *queueData, TempEnum drawType, TempInt start, TempSizei len)
+{
+  AppendParameter(queueData, &drawType, sizeof(TempEnum));
+  AppendParameter(queueData, &start, sizeof(TempInt));
+  AppendParameter(queueData, &len, sizeof(TempSizei));
+  AppendCommand(queueData, &DrawArraysFunc);
 }

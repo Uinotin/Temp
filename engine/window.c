@@ -87,7 +87,6 @@ void InitWindow(struct Window *window)
     }
 #endif
 
-    pthread_barrier_init(&barrier, NULL, 2);
 }
 
 int ShouldClose(struct Window *window)
@@ -110,12 +109,10 @@ void WindowMainLoop(struct Window *window)
     SyncThreads();
   }
 
+  DestroyRend(&(window->rend));
+
   glfwDestroyWindow(glfwWindow);
 
   glfwTerminate();
 }
 
-void SyncThreads(void)
-{
-  pthread_barrier_wait(&barrier);
-}

@@ -4,6 +4,7 @@
 #include "rend.h"
 #include "commands.h"
 
+pthread_barrier_t barrier;
 void InitRend(struct Rend *rend)
 {
   struct Handles *handles = &(rend->handles);
@@ -18,6 +19,7 @@ void InitRend(struct Rend *rend)
   StartCommandQueue(&(rend->defaultCommandQueue), 2, sizeof(TempEnum) + sizeof(struct Handles));
   Clear(&(rend->defaultCommandQueue.queueData), TEMP_COLOR_BUFFER_BIT);
   rend->commandQueueList.first = &(rend->defaultCommandQueue);
+  rend->commandQueueList.last = &(rend->defaultCommandQueue);
   {
     GLenum err;
     glewExperimental = GL_TRUE;
@@ -27,6 +29,8 @@ void InitRend(struct Rend *rend)
       fprintf(stderr, "Error: %s\n", glewGetErrorString(err)); 
     }
   }
+
+  pthread_barrier_init(&barrier, NULL, 2);
 }
 
 void DestroyRend(struct Rend *rend)
@@ -46,16 +50,16 @@ void DestroyRend(struct Rend *rend)
   }
 }
 
-size_t GenHandlesFunc(char *data)
+void GenHandlesFunc(char **data)
 {
   unsigned int i, size;
-  struct Handles *handles = (struct Handles *)data;
+  struct Handles *handles = (struct Handles *)*data;
   glGenBuffers(handles->nBuffers, handles->buffers);
   size = handles->nPrograms;
   for(i = 0; i < size; ++i)
     handles->programs[i] = glCreateProgram();
   glGenVertexArrays(handles->nVAOs, handles->VAOs);
-  return sizeof(struct Handles);
+  *data += sizeof(struct Handles);
 }
 
 void GenHandles(struct QueueData *queueData, struct Handles *handles)
@@ -111,30 +115,31 @@ void ExecCommands(struct Rend *rend)
   {
     char *queue;
     Command *commands;
-    unsigned int j, queueLen, nCommands;
+    unsigned int j, nCommands;
     queue = commandQueue->queueData.queue;
+    commands = commandQueue->queueData.commands;
       
     nCommands = commandQueue->queueData.nCommands;
     for (j = 0; j < nCommands; ++j)
+      (*(commands++))((char **)&(queue));
     {
-      unsigned int currentCommandSize = sizeof(Command) + ((*commands)((void *)(queue + sizeof(Command))));
-      commands += sizeof(Command);
-      queue += currentCommandSize;
+      struct CommandQueue *prevCommandQueue;
+      LockCommandQueue(commandQueue);
+      prevCommandQueue = commandQueue;
+      commandQueue = commandQueue->next;
+      UnlockCommandQueue(prevCommandQueue);
     }
-    LockCommandQueue(commandQueue);
-    commandQueue = commandQueue->next;
-    UnlockCommandQueue(commandQueue->prev);
   }
 }
 
 void StartAppend(struct Rend *rend)
 {
-  LockCommandQueue(rend->last);
+  LockCommandQueue(rend->commandQueueList.last);
 }
 void Append(struct Rend *rend, struct CommandQueue *commandQueue)
 {
   struct CommandQueue *prev;
-  pthread_mutex_lock(rend->commandQueueList.mutex);
+  pthread_mutex_lock(&(rend->commandQueueList.mutex));
   prev = rend->commandQueueList.last;
   LockCommandQueue(commandQueue);
   if(prev)
@@ -147,12 +152,12 @@ void Append(struct Rend *rend, struct CommandQueue *commandQueue)
   else
     rend->commandQueueList.first = commandQueue;
     
-  pthread_mutex_unlock(rend->commandQueueList.mutex);
+  pthread_mutex_unlock(&(rend->commandQueueList.mutex));
 }
 
 void FinishAppend(struct Rend *rend)
 {
-  UnlockCommandQueue(rend->last);
+  UnlockCommandQueue(rend->commandQueueList.last);
 }
 
 struct CommandQueue *GetFirstCommandQueue(struct Rend *rend)
@@ -171,4 +176,9 @@ void CreateBuffer(struct Rend *rend, struct Buffer *buffer, TempEnum bufferType,
   buffer->size = bufferSize;
   buffer->handleData.type = bufferType;
   buffer->handleData.handle = GetBufferHandle(rend);
+}
+
+void SyncThreads(void)
+{
+  pthread_barrier_wait(&barrier);
 }

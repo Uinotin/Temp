@@ -1,11 +1,23 @@
-#include "glrend.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+#include "rend.h"
 #include "commands.h"
 
 void InitRend(struct Rend *rend)
 {
-  rend->nHandles = 0;
-  rend->handles = 0;
+  struct Handles *handles = &(rend->handles);
+  handles->usedPrograms = 0;
+  handles->usedBuffers = 0;
+  handles->usedVAOs = 0;
 
+  handles->programs = 0;
+  handles->buffers = 0;
+  handles->VAOs = 0;
+
+  StartCommandQueue(&(rend->defaultCommandQueue), 2, sizeof(TempEnum) + sizeof(struct Handles));
+  Clear(&(rend->defaultCommandQueue.queueData), TEMP_COLOR_BUFFER_BIT);
+  rend->commandQueueList.first = &(rend->defaultCommandQueue);
   {
     GLenum err;
     glewExperimental = GL_TRUE;
@@ -19,14 +31,76 @@ void InitRend(struct Rend *rend)
 
 void DestroyRend(struct Rend *rend)
 {
-  if(rend->handles)
-    free(handles);
+  struct Handles *handles = &(rend->handles);
+  if(handles->buffers)
+  {
+    unsigned int i, size;
+    glDeleteBuffers(handles->nBuffers, handles->buffers); 
+    glDeleteVertexArrays(handles->nVAOs, handles->VAOs);
+    size = handles->nPrograms;
+    for(i = 0; i < size; ++i)
+      glDeleteProgram(handles->programs[i]);
+    free(handles->buffers);
+    free(handles->VAOs);
+    free(handles->programs);
+  }
 }
 
-void AllocHandles(struct Rend *rend, TempUInt nHandles)
+size_t GenHandlesFunc(char *data)
 {
-  rend->handles = (GLuint *)malloc(nHandles*sizeof(GLuint));
-  rend->nHandles = nHandles;
+  unsigned int i, size;
+  struct Handles *handles = (struct Handles *)data;
+  glGenBuffers(handles->nBuffers, handles->buffers);
+  size = handles->nPrograms;
+  for(i = 0; i < size; ++i)
+    handles->programs[i] = glCreateProgram();
+  glGenVertexArrays(handles->nVAOs, handles->VAOs);
+  return sizeof(struct Handles);
+}
+
+void GenHandles(struct QueueData *queueData, struct Handles *handles)
+{
+  AppendParameter(queueData, handles, sizeof(struct Handles));
+  AppendCommand(queueData, &GenHandlesFunc);
+}
+
+void AllocHandles(struct Rend *rend, unsigned int nBuffers, unsigned int nPrograms, unsigned int nVAOs)
+{
+  struct Handles *handles = &(rend->handles);
+  handles->buffers = (TempUInt *)malloc(nBuffers*sizeof(TempUInt));
+  handles->programs = (TempUInt *)malloc(nPrograms*sizeof(TempUInt));
+  handles->VAOs = (TempUInt *)malloc(nVAOs*sizeof(TempUInt));
+  handles->nBuffers = nBuffers;
+  handles->nPrograms = nPrograms;
+  handles->nVAOs = nVAOs;
+  SyncThreads();
+  GenHandles(&(rend->defaultCommandQueue.queueData), handles);
+  SyncThreads();
+  SyncThreads();
+  EmptyCommandQueue(&(rend->defaultCommandQueue));
+  Clear(&(rend->defaultCommandQueue.queueData), TEMP_COLOR_BUFFER_BIT);
+  SyncThreads();
+}
+
+TempUInt GetBufferHandle(struct Rend *rend)
+{
+  struct Handles *handles = &(rend->handles);
+  assert(buffers && handles->usedBuffers < handles->nBuffers);
+  return handles->buffers[handles->usedBuffers++];
+}
+
+TempUInt GetProgramHandle(struct Rend *rend)
+{
+  struct Handles *handles = &(rend->handles);
+  assert(programs && handles->usedPrograms < handles->nPrograms);
+  return handles->programs[handles->usedPrograms++];
+}
+
+TempUInt GetVAOHandle(struct Rend *rend)
+{
+  struct Handles *handles = &(rend->handles);
+  assert(handles->VAOs && handles->usedVAOs < handles->nVAOs);
+  return handles->VAOs[handles->usedVAOs++];
 }
 
 void ExecCommands(struct Rend *rend)
@@ -37,13 +111,13 @@ void ExecCommands(struct Rend *rend)
   {
     char *queue;
     Command *commands;
-    unsigned int j, queueLen;
-    queue = commandQueue->queue;
+    unsigned int j, queueLen, nCommands;
+    queue = commandQueue->queueData.queue;
       
     nCommands = commandQueue->queueData.nCommands;
     for (j = 0; j < nCommands; ++j)
     {
-      unsigned int currentCommandSize = sizeof(Command) + (*(commands)(rend, (void *)(queue + sizeof(Command))));
+      unsigned int currentCommandSize = sizeof(Command) + ((*commands)((void *)(queue + sizeof(Command))));
       commands += sizeof(Command);
       queue += currentCommandSize;
     }
@@ -91,13 +165,10 @@ void SetFirstCommandQueue(struct Rend *rend, struct CommandQueue *commandQueue)
   rend->commandQueueList.first = commandQueue;
 }
 
-//Could try making a more general way of using objects with handles, but I'll get to that later.
-GLuint GetGLHandle(struct Rend *rend, unsigned int handle)
+void CreateBuffer(struct Rend *rend, struct Buffer *buffer, TempEnum bufferType, size_t bufferSize)
 {
-  return rend->handles[handle - 1];
-}
-
-void SetGLHandle(struct Rend *rend, unsigned int handle, GLuint GLhandle)
-{
-  rend->handles[handle - 1] = GLhandle;
+  buffer->data = (char *)malloc(bufferSize);
+  buffer->size = bufferSize;
+  buffer->handleData.type = bufferType;
+  buffer->handleData.handle = GetBufferHandle(rend);
 }

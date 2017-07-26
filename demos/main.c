@@ -14,6 +14,8 @@ void *WorkThread(void *arg)
 {
   struct CommandQueue commandQueue;
   struct QueueData *queueData = queueData;
+  struct Buffer buffer;
+  TempUInt VAO, program;
   {
     const TempFloat triangle[] =
       {
@@ -26,7 +28,7 @@ void *WorkThread(void *arg)
     const TempChar fShader[] = "#version 420\nout vec4 oColor;void main(void){oColor = vec4(1.0, 0.0, 1.0, 1.0);}";
     const size_t indicesLensAndOffsets[] = {0, 0, 2};
 
-    AllocHandles(&(window.rend), 4);
+    AllocHandles(&(window.rend), 4, 1, 1);
     StartCommandQueue(&commandQueue, 7,
                       6 * sizeof(TempUInt) +
 		      sizeof(TempEnum) +
@@ -35,13 +37,16 @@ void *WorkThread(void *arg)
 		      sizeof(vShader) +
 		      sizeof(fShader) +
 		      sizeof(indicesLensAndOffsets));
-    
-    GenVAO(queueData, 1);
-    BindVAO(queueData, 1);
-    UploadBuffer(queueData, TEMP_ARRAY_BUFFER, 2, sizeof(triangle), triangle);
+
+    CreateBuffer(&(window.rend), &buffer, TEMP_ARRAY_BUFFER, sizeof(triangle));
+
+    VAO = GetVAOHandle(&(window.rend));
+    BindVAO(queueData, VAO);
+    UploadBuffer(&commandQueue, &buffer);
     AttribPointers(queueData, sizeof(TempFloat) * 2, 1, indicesLensAndOffsets);
     BindVAO(queueData, 0);
-    LoadProgram(queueData, 3, sizeof(vShader), sizeof(fShader), vShader, fShader);
+    program = GetProgramHandle(&(window.rend));
+    LoadProgram(queueData, program, sizeof(vShader), sizeof(fShader), vShader, fShader);
 
     SyncThreads();
     StartAppend(&(window.rend));
@@ -52,8 +57,8 @@ void *WorkThread(void *arg)
     SyncThreads();
 
     EmptyCommandQueue(&commandQueue);
-    BindVAO(queueData, 1);
-    UseProgram(queueData, 3);
+    BindVAO(queueData, VAO);
+    UseProgram(queueData, program);
     Draw(queueData, TEMP_TRIANGLES, 0, 3);
     UseProgram(queueData, 0);
     BindVAO(queueData, 0);
@@ -93,6 +98,7 @@ int main(void)
     
     WindowMainLoop(&window);
     
+    DestroyWindow(&(window.rend));
     
     pthread_join(workThreadId, 0);
 

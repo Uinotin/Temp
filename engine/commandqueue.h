@@ -38,11 +38,12 @@ struct CommandQueueList
   struct CommandQueue *last;
   
   pthread_mutex_t mutex;
-}
+};
 
 void StartCommandQueue(struct CommandQueue *commandQueue, unsigned int commandsArraySize, unsigned int queueArraySize);
+void FreeCommandQueue(struct CommandQueue *commandQueue);
 void EmptyCommandQueue(struct CommandQueue *commandQueue);
-void AppendCommand(struct CommandQueue *dest, struct QueueData *source);
+void AppendCommandData(struct CommandQueue *dest, struct QueueData *source);
 
 void LockCommandQueue(struct CommandQueue *commandQueue);
 void UnlockCommandQueue(struct CommandQueue *commandQueue);

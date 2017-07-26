@@ -1,5 +1,4 @@
 #include "commands.h"
-#include "glrend.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,7 +7,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-static void AppendParameter(struct QueueData *queueData, void *parameter, size_t len)
+void AppendParameter(struct QueueData *queueData, void *parameter, size_t len)
 {
   assert(queueData->queueLen + len < queueData->queueSize);
   //FIXME: This might cause performance issues if used with non-array parametres?
@@ -16,18 +15,18 @@ static void AppendParameter(struct QueueData *queueData, void *parameter, size_t
   queueData->queueLen += len;
 }
 
-static void AppendCommand(struct QueueData *queueData, Command command)
+void AppendCommand(struct QueueData *queueData, Command command)
 {
   assert(queueData->nCommands < queueData->maxCommands);
   queueData->commands[(queueData->nCommands++)] = command; 
 }
 
 
-size_t ClearFunc(struct Rend *rend, char *data)
+void ClearFunc(char **data)
 {
-  GLenum bitEnum = *((GLenum *)data);
+  GLenum bitEnum = *((GLenum *)*data);
   glClear(bitEnum);
-  return sizeof(GLenum);
+  *data += sizeof(GLenum);
 }
 		       
 void Clear(struct QueueData *queueData, TempEnum bitEnum)
@@ -36,56 +35,10 @@ void Clear(struct QueueData *queueData, TempEnum bitEnum)
   AppendCommand(queueData, &ClearFunc);
 }
 
-
-size_t GenBufferFunc(struct Rend *rend, char *data)
+void BindVAOFunc(char **data)
 {
-  TempUInt glHandle;
-  glGenBuffers(1, &glHandle);
-  SetGLHandle((struct GLRend *)(rend->rend), *((TempUInt*)data), glHandle);
-  return sizeof(TempUInt);
-}
-
-void GenBuffer(struct QueueData *queueData, TempUInt handle)
-{
-  AppendParameter(queueData, &handle, sizeof(TempUInt));
-  AppendCommand(queueData, &GenBufferFunc);
-}
-
-
-size_t BindBufferFunc(struct Rend *rend, char *data)
-{
-  GLenum bufferEnum = *((GLenum *)data);
-  data += sizeof(GLenum);
-  TempUInt handle = *((TempUInt *)data);
-  glBindBuffer(bufferEnum, handle ? GetGLHandle((struct GLRend *)(rend->rend), *((TempUInt *)data)) : 0);
-  return sizeof(GLenum) + sizeof(TempUInt);
-}
-
-void BindBuffer(struct QueueData *queueData, TempEnum bufferType, TempUInt handle)
-{
-  AppendParameter(queueData, &bufferType, sizeof(TempEnum));
-  AppendParameter(queueData, &handle, sizeof(TempUInt));
-  AppendCommand(queueData, &BindBufferFunc);
-}
-
-size_t GenVAOFunc(struct Rend *rend, char *data)
-{
-  TempUInt glHandle;
-  glGenVertexArrays(1, &glHandle);
-  SetGLHandle((struct GLRend *)(rend->rend), *((TempUInt*)data), glHandle);
-  return sizeof(TempUInt);
-}
-
-void GenVAO(struct QueueData *queueData, TempUInt handle)
-{
-  AppendParameter(queueData, &handle, sizeof(TempUInt));
-  AppendCommand(queueData, &GenVAOFunc);
-}
-
-size_t BindVAOFunc(struct Rend *rend, char *data)
-{
-  glBindVertexArray(handle ? GetGLHandle((struct GLRend *)(rend->rend), *((TempUInt *)data)) : 0);
-  return sizeof(TempUInt);
+  glBindVertexArray(*((TempUInt *)*data));
+  *data += sizeof(TempUInt);
 }
 void BindVAO(struct QueueData *queueData, TempUInt handle)
 {
@@ -93,42 +46,26 @@ void BindVAO(struct QueueData *queueData, TempUInt handle)
   AppendCommand(queueData, &BindVAOFunc);
 }
 
-size_t UploadBufferFunc(struct Rend *rend, char **data)
+void AttribPointersFunc(char **data)
 {
-  TempUInt glHandle;
-  char *buffer;
-  size_t bufferSize;
-  TempUInt handle;
-  TempEnum bufferType = **((TempEnum **)data);
-  *data += sizeof(TempEnum);
-  handle = **((TempUInt **)data);
-  *data += sizeof(TempUInt);
-  bufferSize = **((size_t **)data);
-  *data += sizeof(size);
-  buffer = *data;
-  *data += bufferSize;
+  TempUInt i;
+  size_t stride;
+  TempUInt nAttributes;
+  TempUInt *indicesLensAndOffsets;
+  char *dataPointer = *data;
+  stride = *((size_t *)dataPointer);
+  dataPointer += sizeof(TempUInt);
+  nAttributes = *((TempUInt *)dataPointer);
+  dataPointer += sizeof(TempUInt);
+  indicesLensAndOffsets = (TempUInt *)dataPointer;
 
-  glGenBuffers(bufferType, &glHandle);
-  SetGLHandle((struct GLRend *)(rend->rend), handle, glHandle);
+  for (i = 0; i < nAttributes; ++i)
+  {
+    glVertexAttribPointer(indicesLensAndOffsets[0], indicesLensAndOffsets[1], GL_FLOAT, GL_FALSE, stride, (char*)0 + indicesLensAndOffsets[2]);
+    indicesLensAndOffsets += 3;
+  }
 
-  glBindBuffer(bufferType, glHandle);
-
-  glBufferData(bufferType, bufferSize, buffer, GL_STATIC_DRAW);
-}
-void UploadBuffer(struct QueueData *queueData, TempEnum bufferType, TempUInt handle, size_t bufferSize, char *buffer)
-{
-  AppendParameter(queueData, &bufferType, sizeof(TempEnum));
-  AppendParameter(queueData, &handle, sizeof(TempUInt));
-  AppendParameter(queueData, &bufferSize, sizeof(TempUInt));
-  AppendParameter(queueData, buffer, bufferSize);
-  AppendCommand(queueData,&UploadBufferFunc);
-}
-
-void AttribPointersFunc(struct Rend *rend, char *data)
-{
-  size_t stride = *((size_t *)data);
-  TempUInt nAttributes = *((TempUInt *)data);
-  TempUInt *indicesLensAndOffsets
+  *data += 2 * sizeof(TempUInt) + sizeof(TempUInt)*nAttributes*3;
 }
 void AttribPointers(struct QueueData *queueData, size_t stride, TempUInt nAttributes, TempUInt *indicesLensAndOffsets)
 {
@@ -138,18 +75,75 @@ void AttribPointers(struct QueueData *queueData, size_t stride, TempUInt nAttrib
   AppendCommand(queueData,&AttribPointersFunc);
 }
 
-void LoadProgramFunc(struct Rend *rend, char *data)
+static GLuint CompileShader(const GLchar **shaderSource, GLenum shaderType)
 {
-  TempUInt handle = *((TempUInt *)data);
-  size_t vShaderLen = *((size_t *)data);
-  size_t fShaderLen = *((size_t *)data);
-  char *vShader, char *fShader
+  shader = glCreateShader(shaderType);
+  glShaderSource(shader, 1, (const GLchar **)&shaderSource, NULL);
+  glCompileShader(shader);
+  {
+    GLint compiled;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+    if(!compiled)
+    {
+      GLchar log[1024];
+      GLint blen = 0;	
+      GLsizei slen = 0;
+
+      glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &blen);       
+
+      if (blen > 1)
+      {
+        glGetShaderInfoLog(shader, 1024, &slen, log);
+        printf("Failed to compile shader:\n%s\n", log);
+      }	
+      glDeleteShader(shader);
+      shader = 0;
+    }
+  }
+  *data += shader;
 }
-void LoadProgram(struct QueueData *queueData, TempUInt handle, size_t vShaderLen, size_t fShaderLen, char *vShader, char *fShader)
+
+void LoadProgramFunc(char **data)
 {
+  TempChar *vShader, *fShader;
+  TempUInt handle, vHandle, fHandle;
+  size_t vShaderLen, fShaderLen;
+  char *dataPointer = *data;
+  handle = *((TempUInt *)dataPointer);
+  dataPointer += sizeof(TempUInt);
+  vShaderLen = *((size_t *)dataPointer);
+  dataPointer += sizeof(size_t);
+  fShaderLen = *((size_t *)dataPointer);
+  dataPointer += sizeof(size_t);
+  vShader = (TempChar *)dataPointer;
+  dataPointer += sizeof(TempChar) * vShaderLen;
+  fShader = (TempChar *)dataPointer;
+
+  vHandle = CompileShader(vShader, GL_VERTEX_SHADER);
+  fHandle = CompileShader(fShader, GL_FRAGMENT_SHADER);
+  glAttachShader(handle, vHandle);
+  glAttachShader(handle, fHandle);
+
+  *data += sizeof(TempUInt) + sizeof(size_t) * 2 + sizeof(TempChar) * fShaderLen + sizeof(TempChar) * vShaderLen;
+}
+void LoadProgram(struct QueueData *queueData, TempUInt handle, size_t vShaderLen, size_t fShaderLen, TempChar *vShader, TempChar *fShader)
+{
+  AppendParameter(queueData, &handle, sizeof(TempUInt));
   AppendParameter(queueData, &vShaderLen, sizeof(size_t));
   AppendParameter(queueData, &fShaderLen, sizeof(size_t));
-  AppendParameter(queueData, vShader, vShaderLen * sizeof(char));
-  AppendParameter(queueData, fShader, fShaderLen * sizeof(char));
+  AppendParameter(queueData, vShader, vShaderLen * sizeof(TempChar));
+  AppendParameter(queueData, fShader, fShaderLen * sizeof(TempChar));
   AppendCommand(queueData,&LoadProgramFunc);
+}
+
+void UseProgramFunc(char **data)
+{
+  glUseProgram(*((TempUInt *)*data));
+  *data += sizeof(TempUInt);
+}
+
+void UseProgram(struct QueueData *queueData, TempUInt handle)
+{
+  AppendParameter(queueData, handle, sizeof(TempUInt));
+  AppendCommand(queueData,&UseProgramFunc);
 }

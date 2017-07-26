@@ -11,7 +11,7 @@ struct Window
 
 void InitWindow(struct Window *window);
 int ShouldClose(struct Window *window);
-void WindowMainLoop(strict Window *window);
+void WindowMainLoop(struct Window *window);
 void SyncThreads(void);
 
 #endif

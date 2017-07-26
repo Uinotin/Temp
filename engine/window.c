@@ -4,7 +4,6 @@
 #include <stdio.h>
 
 #include "window.h"
-#include "glstate.h"
 
 pthread_barrier_t barrier;
 
@@ -45,7 +44,7 @@ static void APIENTRY openglCallbackFunction(GLenum source, GLenum type, GLuint i
 }
 #endif
 
-void InitWindow(Window *window)
+void InitWindow(struct Window *window)
 {
   GLFWwindow* glfwWindow;
   //currentScene = 0;
@@ -91,17 +90,17 @@ void InitWindow(Window *window)
     pthread_barrier_init(&barrier, NULL, 2);
 }
 
-int ShouldClose(Window *window)
+int ShouldClose(struct Window *window)
 {
   return glfwWindowShouldClose((GLFWwindow *)(window->systemWindow));
 }
 
-void WindowMainLoop(Window *window)
+void WindowMainLoop(struct Window *window)
 {
   GLFWwindow *glfwWindow = (GLFWwindow *)window->systemWindow;
   while (!glfwWindowShouldClose(glfwWindow))
   {
-    DrawFrame(&(window->rend));
+    ExecCommands(&(window->rend));
 
     glfwSwapBuffers(glfwWindow);
     

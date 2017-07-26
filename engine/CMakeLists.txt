@@ -1,5 +1,5 @@
 find_package(PkgConfig REQUIRED)
 pkg_search_module(GLFW REQUIRED glfw3)
 include_directories(${GLFW_INCLUDE_DIRS})
-add_library(engine window.c commandqueue.c glcommands.c glrend.c rend.c)
+add_library(engine window.c buffer.c commandqueue.c glcommands.c rend.c)
 target_link_libraries(engine pthread GL GLEW ${GLFW_STATIC_LIBRARIES})

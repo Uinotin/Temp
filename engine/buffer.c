@@ -4,27 +4,27 @@
 
 void UploadBufferFunc(char **data)
 {
-  struct Buffer *buffer = (struct Buffer *)(*data);
+  Buffer *buffer = (Buffer *)(*data);
   glBindBuffer(buffer->handleData.type, buffer->handleData.handle);
 
   glBufferData(buffer->handleData.type, buffer->size, buffer->data, GL_STATIC_DRAW);
-  (*data) += sizeof(struct Buffer);
+  (*data) += sizeof(Buffer);
 }
-void UploadBuffer(struct QueueData *queueData, struct Buffer *buffer)
+void UploadBuffer(QueueData *queueData, Buffer *buffer)
 {
-  AppendParameter(queueData, buffer, sizeof(struct Buffer));
+  AppendParameter(queueData, buffer, sizeof(Buffer));
   AppendCommand(queueData, &UploadBufferFunc);
 }
 
 void BindBufferFunc(char **data)
 {
-  struct HandleData *handleData = (struct HandleData *)(*data);
+  HandleData *handleData = (HandleData *)(*data);
   glBindBuffer(handleData->type, handleData->handle);
-  *data += sizeof(struct HandleData);
+  *data += sizeof(HandleData);
 }
-void BindBuffer(struct QueueData *queueData, struct HandleData *handleData)
+void BindBuffer(QueueData *queueData, HandleData *handleData)
 {
-  AppendParameter(queueData, &(handleData), sizeof(struct HandleData));
+  AppendParameter(queueData, &(handleData), sizeof(HandleData));
   AppendCommand(queueData, &BindBufferFunc);
 }
 
@@ -34,7 +34,7 @@ void UnbindBufferFunc(char **data)
   *data += sizeof(TempEnum);
 }
 
-void UnbindBuffer(struct QueueData *queueData, TempEnum bufferType)
+void UnbindBuffer(QueueData *queueData, TempEnum bufferType)
 {
   AppendParameter(queueData, &bufferType, sizeof(TempEnum));
   AppendCommand(queueData, &UnbindBufferFunc);

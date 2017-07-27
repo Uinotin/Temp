@@ -18,33 +18,8 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         glfwSetWindowShouldClose(window, GL_TRUE);
 }
 
-#if OPENGL_DEBUG_OUTPUT
-static void APIENTRY openglCallbackFunction(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
-{
-  if(1/*severity != GL_DEBUG_SEVERITY_NOTIFICATION*/)
-  {
-    printf("GL_DEBUG_SEVERITY_");
-    switch (severity)
-    {
-      case GL_DEBUG_SEVERITY_HIGH:
-	printf("HIGH");
-	break;
-      case GL_DEBUG_SEVERITY_MEDIUM:
-	printf("MEDIUM");
-	break;
-      case GL_DEBUG_SEVERITY_LOW:
-	printf("LOW");
-	break;
-      case GL_DEBUG_SEVERITY_NOTIFICATION:
-	printf("NOTIFICATION");
-	break;
-    }
-    printf(":\n%s\n", message);
-  }
-}
-#endif
 
-void InitWindow(struct Window *window)
+void InitWindow(Window *window)
 {
   GLFWwindow* glfwWindow;
   //currentScene = 0;
@@ -74,27 +49,17 @@ void InitWindow(struct Window *window)
 
     window->systemWindow = (char *)glfwWindow;
 
-#if OPENGL_DEBUG_OUTPUT
-    if(glDebugMessageCallback)
-    {
-      GLuint unusedIds = 0;
-      glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-      glDebugMessageCallback((GLDEBUGPROC)openglCallbackFunction, 0);
-      glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE,
-			    0,
-			    &unusedIds,
-			    1);
-    }
-#endif
+    InitRend(&(window->rend));
+
 
 }
 
-int ShouldClose(struct Window *window)
+int ShouldClose(Window *window)
 {
   return glfwWindowShouldClose((GLFWwindow *)(window->systemWindow));
 }
 
-void WindowMainLoop(struct Window *window)
+void WindowMainLoop(Window *window)
 {
   GLFWwindow *glfwWindow = (GLFWwindow *)window->systemWindow;
   while (!glfwWindowShouldClose(glfwWindow))

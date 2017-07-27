@@ -3,7 +3,9 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#ifdef _DEBUG
 #define OPENGL_DEBUG_OUTPUT 1
+#endif
 
 typedef void (*Command)(char **);
 

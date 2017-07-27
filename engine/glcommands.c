@@ -7,7 +7,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-void AppendParameter(struct QueueData *queueData, void *parameter, size_t len)
+void AppendParameter(QueueData *queueData, void *parameter, size_t len)
 {
   assert(queueData->queueLen + len < queueData->queueSize);
   //FIXME: This might cause performance issues if used with non-array parametres?
@@ -15,7 +15,7 @@ void AppendParameter(struct QueueData *queueData, void *parameter, size_t len)
   queueData->queueLen += len;
 }
 
-void AppendCommand(struct QueueData *queueData, Command command)
+void AppendCommand(QueueData *queueData, Command command)
 {
   assert(queueData->nCommands < queueData->maxCommands);
   queueData->commands[(queueData->nCommands++)] = command; 
@@ -29,7 +29,7 @@ void ClearFunc(char **data)
   *data += sizeof(GLenum);
 }
 		       
-void Clear(struct QueueData *queueData, TempEnum bitEnum)
+void Clear(QueueData *queueData, TempEnum bitEnum)
 {
   AppendParameter(queueData, &bitEnum, sizeof(TempEnum));
   AppendCommand(queueData, &ClearFunc);
@@ -40,7 +40,7 @@ void BindVAOFunc(char **data)
   glBindVertexArray(*((TempUInt *)(*data)));
   *data += sizeof(TempUInt);
 }
-void BindVAO(struct QueueData *queueData, TempUInt handle)
+void BindVAO(QueueData *queueData, TempUInt handle)
 {
   AppendParameter(queueData, &handle, sizeof(TempUInt));
   AppendCommand(queueData, &BindVAOFunc);
@@ -62,10 +62,11 @@ void AttribPointersFunc(char **data)
   for (i = 0; i < nAttributes; ++i)
   {
     glVertexAttribPointer(indicesLensAndOffsets[0], indicesLensAndOffsets[1], GL_FLOAT, GL_FALSE, stride, (char*)0 + indicesLensAndOffsets[2]);
+    glEnableVertexAttribArray(indicesLensAndOffsets[0]);
     indicesLensAndOffsets += 3;
   }
 }
-void AttribPointers(struct QueueData *queueData, size_t stride, TempUInt nAttributes, TempUInt *indicesLensAndOffsets)
+void AttribPointers(QueueData *queueData, size_t stride, TempUInt nAttributes, TempUInt *indicesLensAndOffsets)
 {
   AppendParameter(queueData, &stride, sizeof(size_t));
   AppendParameter(queueData, &nAttributes, sizeof(nAttributes));
@@ -122,8 +123,9 @@ void LoadProgramFunc(char **data)
   fHandle = CompileShader(((const GLchar **)&fShader), GL_FRAGMENT_SHADER, (GLint)fShaderLen);
   glAttachShader(handle, vHandle);
   glAttachShader(handle, fHandle);
+  glLinkProgram(handle);
 }
-void LoadProgram(struct QueueData *queueData, TempUInt handle, size_t vShaderLen, size_t fShaderLen, TempChar *vShader, TempChar *fShader)
+void LoadProgram(QueueData *queueData, TempUInt handle, size_t vShaderLen, size_t fShaderLen, TempChar *vShader, TempChar *fShader)
 {
   AppendParameter(queueData, &handle, sizeof(TempUInt));
   AppendParameter(queueData, &vShaderLen, sizeof(size_t));
@@ -139,7 +141,7 @@ void UseProgramFunc(char **data)
   *data += sizeof(TempUInt);
 }
 
-void UseProgram(struct QueueData *queueData, TempUInt handle)
+void UseProgram(QueueData *queueData, TempUInt handle)
 {
   AppendParameter(queueData, &handle, sizeof(TempUInt));
   AppendCommand(queueData,&UseProgramFunc);
@@ -159,7 +161,7 @@ void DrawArraysFunc(char **data)
   glDrawArrays(drawType, start, len);
 }
 
-void DrawArrays(struct QueueData *queueData, TempEnum drawType, TempInt start, TempSizei len)
+void DrawArrays(QueueData *queueData, TempEnum drawType, TempInt start, TempSizei len)
 {
   AppendParameter(queueData, &drawType, sizeof(TempEnum));
   AppendParameter(queueData, &start, sizeof(TempInt));

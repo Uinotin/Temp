@@ -8,15 +8,15 @@
 #include "../engine/buffer.h"
 #include "../engine/commands.h"
 
-struct Window window;
-struct Rend *rend;
+Window window;
+Rend *rend;
 
 void *WorkThread(void *arg);
 void *WorkThread(void *arg)
 {
-  struct CommandQueue commandQueue;
-  struct QueueData *queueData = &(commandQueue.queueData);
-  struct Buffer buffer;
+  CommandQueue commandQueue;
+  QueueData *queueData = &(commandQueue.queueData);
+  Buffer buffer;
   TempUInt VAO, program;
   {
     const TempFloat triangle[] =
@@ -26,9 +26,9 @@ void *WorkThread(void *arg)
 	-0.5f, 0.0f
       };
 
-    TempChar vShader[] = "#version 420\nlayout(location = 0) in vec2 pos;void main(void){gl_Position = vec4(pos.x, pos.y, -0.1, 1.0);}\n";
+    TempChar vShader[] = "#version 420\nlayout(location = 0) in vec2 pos;void main(void){gl_Position = vec4(pos.x, pos.y, pos.x, 1.0);}\n";
     TempChar fShader[] = "#version 420\nout vec4 oColor;void main(void){oColor = vec4(1.0, 0.0, 1.0, 1.0);}\n";
-    TempUInt indicesLensAndOffsets[] = {0, 0, 2};
+    TempUInt indicesLensAndOffsets[] = {0, 2, 0};
 
     AllocHandles(rend, 4, 1, 1);
     StartCommandQueue(&commandQueue, 7,
@@ -41,6 +41,7 @@ void *WorkThread(void *arg)
 		      sizeof(indicesLensAndOffsets));
 
     CreateBuffer(rend, &buffer, TEMP_ARRAY_BUFFER, sizeof(triangle));
+    buffer.data = (char*)triangle;
 
     VAO = GetVAOHandle(rend);
     BindVAO(queueData, VAO);
@@ -95,7 +96,6 @@ int main(void)
 
     rend = &(window.rend);
 
-    InitRend(rend);
     
     pthread_create(&workThreadId, 0, WorkThread, 0);
 

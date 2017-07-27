@@ -3,26 +3,26 @@
 #include "typedefs.h"
 #include "commandqueue.h"
 
-struct HandleData
+typedef struct
 {
   TempUInt handle;
   TempEnum type;
-};
+} HandleData;
 
-struct Buffer
+typedef struct
 {
-  struct HandleData handleData;
+  HandleData handleData;
   size_t size;
   char *data;
-};
+} Buffer;
 
 void UploadBufferFunc(char **data);
-void UploadBuffer(struct QueueData *queueData, struct Buffer *buffer);
+void UploadBuffer(QueueData *queueData, Buffer *buffer);
 
 void BindBufferFunc(char **data);
-void BindBuffer(struct QueueData *queueData, struct HandleData *handleData);
+void BindBuffer(QueueData *queueData, HandleData *handleData);
 
 void UnbindBufferFunc(char **data);
-void UnbindBuffer(struct QueueData *queueData, TempEnum bufferType);
+void UnbindBuffer(QueueData *queueData, TempEnum bufferType);
 
 #endif

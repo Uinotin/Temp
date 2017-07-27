@@ -4,7 +4,7 @@
 #include "commandqueue.h"
 #include "buffer.h"
 
-struct Handles
+typedef struct 
 {
   TempUInt *buffers;
   unsigned int nBuffers;
@@ -17,44 +17,44 @@ struct Handles
   TempUInt *VAOs;
   unsigned int nVAOs;
   unsigned int usedVAOs;
-};
+} Handles;
 
-struct Rend
+typedef struct 
 {
-  struct CommandQueueList commandQueueList;
-  struct CommandQueue defaultCommandQueue;
+  CommandQueueList commandQueueList;
+  CommandQueue defaultCommandQueue;
 
-  struct Handles handles;
-};
+  Handles handles;
+} Rend;
 
-void InitRend(struct Rend *rend);
+void InitRend(Rend *rend);
 
-void DestroyRend(struct Rend *rend);
+void DestroyRend(Rend *rend);
 
 void GenHandlesFunc(char **data);
 
-void GenHandles(struct QueueData *queueData, struct Handles *handles);
+void GenHandles(QueueData *queueData, Handles *handles);
 
-void AllocHandles(struct Rend *rend, unsigned int nBuffers, unsigned int nPrograms, unsigned int nVAOs);
+void AllocHandles(Rend *rend, unsigned int nBuffers, unsigned int nPrograms, unsigned int nVAOs);
 
-TempUInt GetBufferHandle(struct Rend *rend);
+TempUInt GetBufferHandle(Rend *rend);
 
-TempUInt GetProgramHandle(struct Rend *rend);
+TempUInt GetProgramHandle(Rend *rend);
 
-TempUInt GetVAOHandle(struct Rend *rend);
+TempUInt GetVAOHandle(Rend *rend);
 
-void ExecCommands(struct Rend *rend);
+void ExecCommands(Rend *rend);
 
-void StartAppend(struct Rend *rend);
-void Append(struct Rend *rend, struct CommandQueue *commandQueue);
+void StartAppend(Rend *rend);
+void Append(Rend *rend, CommandQueue *commandQueue);
 
-void FinishAppend(struct Rend *rend);
+void FinishAppend(Rend *rend);
 
-struct CommandQueue *GetFirstCommandQueue(struct Rend *rend);
+CommandQueue *GetFirstCommandQueue(Rend *rend);
 
-void SetFirstCommandQueue(struct Rend *rend, struct CommandQueue *commandQueue);
+void SetFirstCommandQueue(Rend *rend, CommandQueue *commandQueue);
 
-void CreateBuffer(struct Rend *rend, struct Buffer *buffer, TempEnum bufferType, size_t bufferSize);
+void CreateBuffer(Rend *rend, Buffer *buffer, TempEnum bufferType, size_t bufferSize);
 
 void SyncThreads(void);
 

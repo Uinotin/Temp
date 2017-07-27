@@ -3,7 +3,7 @@
 #include "commandqueue.h"
 
 
-void StartCommandQueue(struct CommandQueue *commandQueue, unsigned int commandsArraySize, unsigned int queueArraySize)
+void StartCommandQueue(CommandQueue *commandQueue, unsigned int commandsArraySize, unsigned int queueArraySize)
 {
   pthread_mutex_init(&(commandQueue->mutex), 0);
 
@@ -17,7 +17,7 @@ void StartCommandQueue(struct CommandQueue *commandQueue, unsigned int commandsA
   commandQueue->next = 0;
 }
 
-void EmptyCommandQueue(struct CommandQueue *commandQueue)
+void EmptyCommandQueue(CommandQueue *commandQueue)
 {
   pthread_mutex_lock(&(commandQueue->mutex));
 
@@ -27,14 +27,14 @@ void EmptyCommandQueue(struct CommandQueue *commandQueue)
   pthread_mutex_unlock(&(commandQueue->mutex));
 }
 
-void FreeCommandQueue(struct CommandQueue *commandQueue)
+void FreeCommandQueue(CommandQueue *commandQueue)
 {
   pthread_mutex_destroy(&(commandQueue->mutex));
   free(commandQueue->queueData.queue);
   free(commandQueue->queueData.commands);
 }
 
-void AppendCommandData(struct CommandQueue *dest, struct QueueData *src)
+void AppendCommandData(CommandQueue *dest, QueueData *src)
 {
   unsigned int newQueueLen;
   pthread_mutex_lock(&(dest->mutex));
@@ -52,18 +52,18 @@ void AppendCommandData(struct CommandQueue *dest, struct QueueData *src)
   pthread_mutex_unlock(&(dest->mutex));
 }
 
-void LockCommandQueue(struct CommandQueue *commandQueue)
+void LockCommandQueue(CommandQueue *commandQueue)
 {
   pthread_mutex_lock(&(commandQueue->mutex));
 }
 
 
-void UnlockCommandQueue(struct CommandQueue *commandQueue)
+void UnlockCommandQueue(CommandQueue *commandQueue)
 {
   pthread_mutex_unlock(&(commandQueue->mutex));
 }
 
-void StartCommandQueueList(struct CommandQueueList *commandQueueList)
+void StartCommandQueueList(CommandQueueList *commandQueueList)
 {
   commandQueueList->first = 0;
   commandQueueList->last = 0;
@@ -71,19 +71,19 @@ void StartCommandQueueList(struct CommandQueueList *commandQueueList)
   pthread_mutex_init(&(commandQueueList->mutex), 0);
 }
 
-void LockCommandQueueList(struct CommandQueueList *commandQueueList)
+void LockCommandQueueList(CommandQueueList *commandQueueList)
 {
   pthread_mutex_lock(&(commandQueueList->mutex));
 }
 
-void UnlockCommandQueueList(struct CommandQueueList *commandQueueList)
+void UnlockCommandQueueList(CommandQueueList *commandQueueList)
 {
   pthread_mutex_unlock(&(commandQueueList->mutex));
 }
 
-void SyncCommandQueueList(struct CommandQueueList *dst, struct CommandQueueList *src)
+void SyncCommandQueueList(CommandQueueList *dst, CommandQueueList *src)
 {
-  struct CommandQueue *queue;
+  CommandQueue *queue;
   LockCommandQueueList(dst);
   queue = src->first;
   if (queue)

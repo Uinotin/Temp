@@ -3,14 +3,14 @@
 
 #include "rend.h"
 
-struct Window
+typedef struct 
 {
-  struct Rend rend;
+  Rend rend;
   char *systemWindow;
-};
+} Window;
 
-void InitWindow(struct Window *window);
-int ShouldClose(struct Window *window);
-void WindowMainLoop(struct Window *window);
+void InitWindow(Window *window);
+int ShouldClose(Window *window);
+void WindowMainLoop(Window *window);
 
 #endif

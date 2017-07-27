@@ -18,9 +18,11 @@ struct QueueData
   int isDirty;
 };
 
+typedef struct QueueData QueueData;
+
 struct CommandQueue
 {
-  struct QueueData queueData;
+  QueueData queueData;
 
   struct CommandQueue *prev;
   struct CommandQueue *next;
@@ -31,28 +33,32 @@ struct CommandQueue
   pthread_mutex_t mutex;
 };
 
+typedef struct CommandQueue CommandQueue;
+
 struct CommandQueueList
 {
   struct CommandQueueList *twin;
-  struct CommandQueue *first;
-  struct CommandQueue *last;
+  CommandQueue *first;
+  CommandQueue *last;
   
   pthread_mutex_t mutex;
 };
 
-void StartCommandQueue(struct CommandQueue *commandQueue, unsigned int commandsArraySize, unsigned int queueArraySize);
-void FreeCommandQueue(struct CommandQueue *commandQueue);
-void EmptyCommandQueue(struct CommandQueue *commandQueue);
-void AppendCommandData(struct CommandQueue *dest, struct QueueData *source);
+typedef struct CommandQueueList CommandQueueList;
 
-void LockCommandQueue(struct CommandQueue *commandQueue);
-void UnlockCommandQueue(struct CommandQueue *commandQueue);
+void StartCommandQueue(CommandQueue *commandQueue, unsigned int commandsArraySize, unsigned int queueArraySize);
+void FreeCommandQueue(CommandQueue *commandQueue);
+void EmptyCommandQueue(CommandQueue *commandQueue);
+void AppendCommandData(CommandQueue *dest, QueueData *source);
+
+void LockCommandQueue(CommandQueue *commandQueue);
+void UnlockCommandQueue(CommandQueue *commandQueue);
 
 
-void StartCommandQueueList(struct CommandQueueList *commandQueueList);
-void LockCommandQueueList(struct CommandQueueList *commandQueueList);
-void UnlockCommandQueueList(struct CommandQueueList *commandQueueList);
+void StartCommandQueueList(CommandQueueList *commandQueueList);
+void LockCommandQueueList(CommandQueueList *commandQueueList);
+void UnlockCommandQueueList(CommandQueueList *commandQueueList);
 
-void SyncCommandQueueList(struct CommandQueueList *dst, struct CommandQueueList *src);
+void SyncCommandQueueList(CommandQueueList *dst, CommandQueueList *src);
 
 #endif

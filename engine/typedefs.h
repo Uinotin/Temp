@@ -14,12 +14,14 @@ typedef GLuint TempUInt;
 typedef GLint TempInt;
 typedef GLchar TempChar;
 typedef GLsizei TempSizei;
+typedef GLvoid TempVoid;
 
 enum tempEnum
 {
   TEMP_TRIANGLES = GL_TRIANGLES,
   TEMP_ARRAY_BUFFER = GL_ARRAY_BUFFER,
-  TEMP_COLOR_BUFFER_BIT = GL_COLOR_BUFFER_BIT
+  TEMP_COLOR_BUFFER_BIT = GL_COLOR_BUFFER_BIT,
+  TEMP_FLOAT = GL_FLOAT
 };
 
 typedef enum tempEnum TempEnum;

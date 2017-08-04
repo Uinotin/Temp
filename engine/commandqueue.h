@@ -16,6 +16,7 @@ struct QueueData
   unsigned int nCommands;
   unsigned int maxCommands;
   int isDirty;
+  pthread_mutex_t dataMutex;
 };
 
 typedef struct QueueData QueueData;
@@ -35,30 +36,14 @@ struct CommandQueue
 
 typedef struct CommandQueue CommandQueue;
 
-struct CommandQueueList
-{
-  struct CommandQueueList *twin;
-  CommandQueue *first;
-  CommandQueue *last;
-  
-  pthread_mutex_t mutex;
-};
-
-typedef struct CommandQueueList CommandQueueList;
-
-void StartCommandQueue(CommandQueue *commandQueue, unsigned int commandsArraySize, unsigned int queueArraySize);
-void FreeCommandQueue(CommandQueue *commandQueue);
+void InitCommandQueue(CommandQueue *commandQueue, unsigned int commandsArraySize, unsigned int queueArraySize);
+void DestroyCommandQueue(CommandQueue *commandQueue);
 void EmptyCommandQueue(CommandQueue *commandQueue);
 void AppendCommandData(CommandQueue *dest, QueueData *source);
 
 void LockCommandQueue(CommandQueue *commandQueue);
 void UnlockCommandQueue(CommandQueue *commandQueue);
-
-
-void StartCommandQueueList(CommandQueueList *commandQueueList);
-void LockCommandQueueList(CommandQueueList *commandQueueList);
-void UnlockCommandQueueList(CommandQueueList *commandQueueList);
-
-void SyncCommandQueueList(CommandQueueList *dst, CommandQueueList *src);
+void LockCommandQueueData(QueueData *queueData);
+void UnlockCommandQueueData(QueueData *queueData);
 
 #endif

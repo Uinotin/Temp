@@ -3,9 +3,10 @@
 #include "commandqueue.h"
 
 
-void StartCommandQueue(CommandQueue *commandQueue, unsigned int commandsArraySize, unsigned int queueArraySize)
+void InitCommandQueue(CommandQueue *commandQueue, unsigned int commandsArraySize, unsigned int queueArraySize)
 {
   pthread_mutex_init(&(commandQueue->mutex), 0);
+  pthread_mutex_init(&(commandQueue->queueData.dataMutex), 0);
 
   commandQueue->queueData.queue = (char *)malloc(queueArraySize);
   commandQueue->queueData.commands = (Command *)malloc(sizeof(Command)*commandsArraySize);
@@ -19,17 +20,18 @@ void StartCommandQueue(CommandQueue *commandQueue, unsigned int commandsArraySiz
 
 void EmptyCommandQueue(CommandQueue *commandQueue)
 {
-  pthread_mutex_lock(&(commandQueue->mutex));
+  pthread_mutex_lock(&(commandQueue->queueData.dataMutex));
 
   commandQueue->queueData.queueLen = 0;
   commandQueue->queueData.nCommands = 0;
 
-  pthread_mutex_unlock(&(commandQueue->mutex));
+  pthread_mutex_unlock(&(commandQueue->queueData.dataMutex));
 }
 
-void FreeCommandQueue(CommandQueue *commandQueue)
+void DestroyCommandQueue(CommandQueue *commandQueue)
 {
   pthread_mutex_destroy(&(commandQueue->mutex));
+  pthread_mutex_destroy(&(commandQueue->queueData.dataMutex));
   free(commandQueue->queueData.queue);
   free(commandQueue->queueData.commands);
 }
@@ -57,49 +59,17 @@ void LockCommandQueue(CommandQueue *commandQueue)
   pthread_mutex_lock(&(commandQueue->mutex));
 }
 
-
 void UnlockCommandQueue(CommandQueue *commandQueue)
 {
   pthread_mutex_unlock(&(commandQueue->mutex));
 }
 
-void StartCommandQueueList(CommandQueueList *commandQueueList)
+void LockCommandQueueData(QueueData *queueData)
 {
-  commandQueueList->first = 0;
-  commandQueueList->last = 0;
-
-  pthread_mutex_init(&(commandQueueList->mutex), 0);
+  pthread_mutex_lock(&(queueData->dataMutex));
 }
 
-void LockCommandQueueList(CommandQueueList *commandQueueList)
+void UnlockCommandQueueData(QueueData *queueData)
 {
-  pthread_mutex_lock(&(commandQueueList->mutex));
-}
-
-void UnlockCommandQueueList(CommandQueueList *commandQueueList)
-{
-  pthread_mutex_unlock(&(commandQueueList->mutex));
-}
-
-void SyncCommandQueueList(CommandQueueList *dst, CommandQueueList *src)
-{
-  CommandQueue *queue;
-  LockCommandQueueList(dst);
-  queue = src->first;
-  if (queue)
-  {
-    LockCommandQueue(queue);
-    dst->first = src->first->twin;
-    dst->last = src->last->twin;
-  }
-  else
-  {
-    dst->first = 0;
-    dst->last = 0;
-  }
-
-  while(queue)
-  {
-    
-  }
+  pthread_mutex_unlock(&(queueData->dataMutex));
 }

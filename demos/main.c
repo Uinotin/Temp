@@ -7,6 +7,8 @@
 #include "../engine/window.h"
 #include "../engine/buffer.h"
 #include "../engine/commands.h"
+#include "../engine/vertexarray.h"
+#include "../engine/program.h"
 
 Window window;
 Rend *rend;
@@ -16,8 +18,9 @@ void *WorkThread(void *arg)
 {
   CommandQueue commandQueue;
   QueueData *queueData = &(commandQueue.queueData);
-  Buffer buffer;
-  TempUInt VAO, program;
+  BufferPtr bufferPtr;
+  VertexArrayPtr VAOPtr;
+  ProgramPtr programPtr;
   {
     const TempFloat triangle[] =
       {
@@ -28,40 +31,37 @@ void *WorkThread(void *arg)
 
     TempChar vShader[] = "#version 420\nlayout(location = 0) in vec2 pos;void main(void){gl_Position = vec4(pos.x, pos.y, pos.x, 1.0);}\n";
     TempChar fShader[] = "#version 420\nout vec4 oColor;void main(void){oColor = vec4(1.0, 0.0, 1.0, 1.0);}\n";
-    TempUInt indicesLensAndOffsets[] = {0, 2, 0};
 
-    AllocHandles(rend, 4, 1, 1);
-    StartCommandQueue(&commandQueue, 7,
-                      6 * sizeof(TempUInt) +
-		      sizeof(TempEnum) +
-		      4 * sizeof(size_t) +
-		      sizeof(triangle) +
-		      sizeof(vShader) +
-		      sizeof(fShader) +
-		      sizeof(indicesLensAndOffsets));
-
-    CreateBuffer(rend, &buffer, TEMP_ARRAY_BUFFER, sizeof(triangle));
-    buffer.data = (char*)triangle;
-
-    VAO = GetVAOHandle(rend);
-    BindVAO(queueData, VAO);
-    UploadBuffer(queueData, &buffer);
-    AttribPointers(queueData, sizeof(TempFloat) * 2, 1, indicesLensAndOffsets);
-    BindVAO(queueData, 0);
-    program = GetProgramHandle(rend);
-    LoadProgram(queueData, program, sizeof(vShader), sizeof(fShader), vShader, fShader);
-
-    SyncThreads();
-    StartAppend(rend);
-    SyncThreads();
-    Append(rend, &commandQueue);
-    FinishAppend(rend);
+    InitCommandQueue(&commandQueue, 7, sizeof(vShader) + sizeof(fShader) + 255);
     
+    
+    GenBuffers(&bufferPtr, 1);
+    SetBufferData(bufferPtr.buffers, sizeof(triangle), (char *)triangle);
+    bufferPtr.buffers->handleData.type = TEMP_ARRAY_BUFFER;
+    GenVAOs(queueData, 1, &VAOPtr);
+    BindVAOPtr(queueData, &VAOPtr);
+    UploadBuffers(queueData, &bufferPtr);
+
+    {
+      VertexAttrib attrib = {.index = 0, .stride = sizeof(TempFloat) * 2, {.size = 2, .type = TEMP_FLOAT, .offset = 0 }};
+      AttribPointers(queueData, 1, &attrib);
+    }
+    BindVAO(queueData, 0);
+    GenPrograms(queueData, 1, &programPtr);
+    LoadProgram(queueData, &programPtr, sizeof(vShader), sizeof(fShader), vShader, fShader);
+
+    StartAppend(&(rend->commandQueueList));
+    SyncThreads();
+    Append(&(rend->commandQueueList), &commandQueue);
+    FinishAppend(&(rend->commandQueueList));
+    
+    SyncThreads();
     SyncThreads();
 
     EmptyCommandQueue(&commandQueue);
-    BindVAO(queueData, VAO);
-    UseProgram(queueData, program);
+    Clear(queueData, TEMP_COLOR_BUFFER_BIT);
+    BindVAO(queueData, *(VAOPtr.vaoHandle));
+    UseProgram(queueData, *(programPtr.program));
     DrawArrays(queueData, TEMP_TRIANGLES, 0, 3);
     UseProgram(queueData, 0);
     BindVAO(queueData, 0);

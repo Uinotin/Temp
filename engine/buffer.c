@@ -1,19 +1,46 @@
+#include <stdlib.h>
 #include "buffer.h"
 #include "commands.h"
 
-
-void UploadBufferFunc(char **data)
+void GenBuffers(BufferPtr *buffers, TempSizei nBuffers)
 {
-  Buffer *buffer = (Buffer *)(*data);
-  glBindBuffer(buffer->handleData.type, buffer->handleData.handle);
-
-  glBufferData(buffer->handleData.type, buffer->size, buffer->data, GL_STATIC_DRAW);
-  (*data) += sizeof(Buffer);
+  char *tempPtr = (char *)malloc(sizeof(Buffer)*nBuffers + sizeof(TempUInt)*nBuffers);
+  buffers->buffers = (Buffer *)tempPtr;
+  buffers->handles = (TempUInt *)(tempPtr + sizeof(Buffer)*nBuffers);
+  buffers->nBuffers = nBuffers;
 }
-void UploadBuffer(QueueData *queueData, Buffer *buffer)
+
+
+void SetBufferData(Buffer *buffer, TempSizei dataSize, char *data)
 {
-  AppendParameter(queueData, buffer, sizeof(Buffer));
-  AppendCommand(queueData, &UploadBufferFunc);
+  buffer->size = dataSize;
+  buffer->data = data;
+}
+
+void UploadBuffersFunc(char **data)
+{
+  BufferPtr *bufferPtr;
+  Buffer *buffers;
+  TempSizei i;
+  bufferPtr = (BufferPtr *)*data;
+  *data += sizeof(BufferPtr);
+  glGenBuffers(bufferPtr->nBuffers, bufferPtr->handles);
+  buffers = bufferPtr->buffers;
+
+  for (i = 0; i < bufferPtr->nBuffers; ++i)
+  {
+    buffers[i].handleData.handle = bufferPtr->handles[i];
+    if(buffers[i].size)
+    {
+      glBindBuffer(buffers[i].handleData.type, buffers[i].handleData.handle);
+      glBufferData(buffers[i].handleData.type, buffers[i].size, buffers[i].data, GL_STATIC_DRAW);
+    }
+  }
+}
+void UploadBuffers(QueueData *queueData, BufferPtr *bufferPtr)
+{
+  AppendParameter(queueData, bufferPtr, sizeof(BufferPtr));
+  AppendCommand(queueData, &UploadBuffersFunc);
 }
 
 void BindBufferFunc(char **data)

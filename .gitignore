@@ -54,6 +54,7 @@ dkms.conf
 #Compile Temps
 *.s
 *.i
+*~
 
 #CMake
 CMakeCache.txt

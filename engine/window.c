@@ -2,10 +2,37 @@
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #include "window.h"
 
 pthread_barrier_t barrier;
+
+#if OPENGL_DEBUG_OUTPUT
+static void APIENTRY openglCallbackFunction(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
+{
+  if(severity != GL_DEBUG_SEVERITY_NOTIFICATION)
+  {
+    printf("GL_DEBUG_SEVERITY_");
+    switch (severity)
+    {
+      case GL_DEBUG_SEVERITY_HIGH:
+	printf("HIGH");
+	break;
+      case GL_DEBUG_SEVERITY_MEDIUM:
+	printf("MEDIUM");
+	break;
+      case GL_DEBUG_SEVERITY_LOW:
+	printf("LOW");
+	break;
+      case GL_DEBUG_SEVERITY_NOTIFICATION:
+	printf("NOTIFICATION");
+	break;
+    }
+    printf(":\n%s\n", message);
+  }
+}
+#endif
 
 static void error_callback(int error, const char* description)
 {
@@ -22,36 +49,56 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 void InitWindow(Window *window)
 {
   GLFWwindow* glfwWindow;
-  //currentScene = 0;
-    glfwSetErrorCallback(error_callback);
+  glfwSetErrorCallback(error_callback);
 
-    if (!glfwInit())
-        exit(EXIT_FAILURE);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+  if (!glfwInit())
+    exit(EXIT_FAILURE);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #if OPENGL_DEBUG_OUTPUT
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+  glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindow = glfwCreateWindow(1280, 720, "Temp", NULL, NULL);
-    if (!glfwWindow)
-    {
-        glfwTerminate();
-        exit(EXIT_FAILURE);
-    }
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindow = glfwCreateWindow(1280, 720, "Temp", NULL, NULL);
+  if (!glfwWindow)
+  {
+    glfwTerminate();
+    exit(EXIT_FAILURE);
+  }
 
-    glfwMakeContextCurrent(glfwWindow);
+  glfwMakeContextCurrent(glfwWindow);
  
-    glfwSwapInterval(1);
+  glfwSwapInterval(1);
 
-    glfwSetKeyCallback(glfwWindow, key_callback);
+  glfwSetKeyCallback(glfwWindow, key_callback);
 
-    window->systemWindow = (char *)glfwWindow;
+  window->systemWindow = (char *)glfwWindow;
 
-    InitRend(&(window->rend));
+  {
+    GLenum err;
+    glewExperimental = GL_TRUE;
+    err = glewInit();
+    if (GLEW_OK != err)
+    {
+      fprintf(stderr, "Error: %s\n", glewGetErrorString(err)); 
+    }
+  }
 
+#if OPENGL_DEBUG_OUTPUT
+    if(glDebugMessageCallback)
+    {
+      GLuint unusedIds = 0;
+      glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+      glDebugMessageCallback((GLDEBUGPROC)openglCallbackFunction, 0);
+      glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE,
+			    0,
+			    &unusedIds,
+			    1);
+    }
+#endif
 
+  pthread_barrier_init(&barrier, NULL, 2);
 }
 
 int ShouldClose(Window *window)
@@ -64,7 +111,7 @@ void WindowMainLoop(Window *window)
   GLFWwindow *glfwWindow = (GLFWwindow *)window->systemWindow;
   while (!glfwWindowShouldClose(glfwWindow))
   {
-    ExecCommands(&(window->rend));
+    DrawScene(window->currentScene);
 
     glfwSwapBuffers(glfwWindow);
     
@@ -74,10 +121,17 @@ void WindowMainLoop(Window *window)
     SyncThreads();
   }
 
-  DestroyRend(&(window->rend));
-
   glfwDestroyWindow(glfwWindow);
 
   glfwTerminate();
 }
 
+void SetCurrentScene(Window *window, Scene *scene)
+{
+  window->currentScene = scene;
+}
+
+void SyncThreads(void)
+{
+  pthread_barrier_wait(&barrier);
+}

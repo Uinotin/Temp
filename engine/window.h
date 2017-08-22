@@ -1,16 +1,18 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#include "rend.h"
+#include "scene.h"
 
 typedef struct 
 {
-  Rend rend;
+  Scene *currentScene;
   char *systemWindow;
 } Window;
 
 void InitWindow(Window *window);
 int ShouldClose(Window *window);
 void WindowMainLoop(Window *window);
+void SetCurrentScene(Window *window, Scene *scene);
+void SyncThreads(void);
 
 #endif

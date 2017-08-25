@@ -35,7 +35,7 @@ void LoadScene(Scene *scene)
     scene->Upload[i](scene->drawDataPointers[i]);
 }
 
-void UpdateScene(Scene *scene, float deltaTime)
+void UpdateScene(Scene *scene, double deltaTime)
 {
   int i, nModules = scene->nModules;
   for(i = 0; i < nModules; ++i)
@@ -54,4 +54,18 @@ char *GetDataPointer(Scene *scene, TempSizei size)
   char *pointer = scene->dataPointer + scene->usedData;
   scene->usedData += size;
   return pointer;
+}
+
+void UpdateSceneDrawData(Scene *scene)
+{
+  int i, nDrawables = scene->nDrawables;
+  for(i = 0; i < nDrawables; ++i)
+    scene->UpdateDrawData[i](scene->drawDataPointers[i]);
+}
+
+void SceneKey(Scene *scene, int key, int action)
+{
+  int i, nModules = scene->nModules;
+  for(i = 0; i < nModules; ++i)
+    scene->Key[i](scene->modulePointers[i], key, action);
 }

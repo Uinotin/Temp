@@ -13,6 +13,7 @@ void InitBuffers(Scene *scene, TempInt currentIndex)
   scene->Alloc[currentIndex] = &AllocBuffers;
   scene->SetVals[currentIndex] = &SetBuffersVals;
   scene->Update[currentIndex] = &UpdateBuffers;
+  scene->Key[currentIndex] = &BuffersKey;
   buffers = (Buffers *)scene->modulePointers[currentIndex];
   buffers->nBuffers = 0;
   if(currentIndex + 1 < scene->nModules)
@@ -61,7 +62,7 @@ void UploadBuffers(char *passTypePointer)
   glBindVertexArray(buffers->buffersVAO);
 }
 
-void UpdateBuffers(char *passTypePointer, float deltaTime)
+void UpdateBuffers(char *passTypePointer, double deltaTime)
 {
 }
 
@@ -82,4 +83,14 @@ void AllocBuffer(Buffers *buffers, TempEnum bufferType, TempEnum drawType, TempS
   buffers->type[nBuffers] = bufferType;
   buffers->drawType[nBuffers] = drawType;
   ++(buffers->nBuffers);
+}
+
+
+void UpdateBuffersDrawData(char *passTypePointer)
+{
+}
+
+void BuffersKey(char *passTypePointer, int key, int action)
+{
+  
 }

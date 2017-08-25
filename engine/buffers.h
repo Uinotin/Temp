@@ -19,8 +19,10 @@ void InitBuffers(Scene *scene, TempInt currentIndex);
 TempSizei AllocBuffers(Scene *scene, TempInt currentIndex);
 void SetBuffersVals(Scene *scene, TempInt currentIndex);
 void UploadBuffers(char *passTypePointer);
-void UpdateBuffers(char *passTypePointer, float deltaTime);
+void UpdateBuffers(char *passTypePointer, double deltaTime);
 void DrawBuffers(char *passTypePointer);
+void UpdateBuffersDrawData(char *passTypePointer);
+void BuffersKey(char *passTypePointer, int key, int action);
 
 void AllocBuffer(Buffers *buffers, TempEnum bufferType, TempEnum drawType, TempSizei size);
 #endif

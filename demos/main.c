@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
-#include <time.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include "../engine/window.h"
@@ -15,15 +15,16 @@ void *WorkThread(void *arg);
 void *WorkThread(void *arg)
 {
   {
-    float delta;
-    clock_t oldTime = clock();
+    double delta;
+    
+    double oldTime = glfwGetTime();
     while(!ShouldClose(&window))
     {
-      clock_t time;
+      double time;
 
 
-      time = clock();
-      delta = ((float)(time - oldTime) / (float)CLOCKS_PER_SEC);
+      time = glfwGetTime();
+      delta = time-oldTime;
       oldTime = time;
 
       delta = delta;

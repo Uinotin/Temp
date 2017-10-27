@@ -5,6 +5,22 @@
 
 typedef struct
 {
+  TempEnum type;
+  TempSizei arraySize;
+  TempInt offset;
+} Attrib;
+
+typedef struct
+{
+  Attrib attrib;
+  TempUInt index;
+  TempInt size;
+  TempSizei stride;
+
+} VertAttrib;
+
+typedef struct
+{
   TempUInt shaderHandle,
     projMatLoc, viewMatLoc, worldMatLoc, normalMatLoc,
     lightPosLoc,
@@ -12,6 +28,7 @@ typedef struct
     VAO, VBO, IBO,
     texture, normalMap;
   TempInt vertCount, indxCount;
+
 
   
   TempFloat projMat[16], worldMat[16], viewMat[16], normalMat[9], lightPosition[3];

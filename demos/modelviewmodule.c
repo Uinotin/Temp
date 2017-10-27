@@ -129,6 +129,132 @@ static TempUInt LoadTGA(const char *fileName, int isSRGB)
 	return texture;
 }
 
+static void GenTangents(char *vertData, const char *indexData, const Attrib *indexAttrib, const VertAttrib *vertAttrib, const VertAttrib *texCoordAttrib, const VertAttrib *normAttrib, VertAttrib *tanAttrib, VertAttrib *bitanAttrib)
+{
+  int i;
+  TempSizei nIndices, nVerts;
+  	
+  const TempUInt *__restrict__ indices;
+  const TempFloat *__restrict__ texCoords, *__restrict__ norms, *__restrict__ verts;
+  TempFloat *__restrict__ bitangents, *__restrict__ tangents;
+  TempSizei texStride, normStride, vertStride, bitanStride, tanStride;
+  nIndices = indexAttrib->arraySize;
+  nVerts = vertAttrib->attrib.arraySize;
+ 
+  verts = (TempFloat *)(vertData + vertAttrib->attrib.offset);
+  norms = (TempFloat *)(vertData + normAttrib->attrib.offset);
+  texCoords = (TempFloat *)(vertData + texCoordAttrib->attrib.offset);
+  tangents = (TempFloat *)(vertData + tanAttrib->attrib.offset);
+  bitangents = (TempFloat *)(vertData + bitanAttrib->attrib.offset);
+  indices = (TempUInt *)(indexData + indexAttrib->offset);
+  vertStride = vertAttrib->stride / sizeof(TempFloat);
+  texStride = texCoordAttrib->stride / sizeof(TempFloat);
+  normStride = normAttrib->stride / sizeof(TempFloat);
+  tanStride = tanAttrib->stride / sizeof(TempFloat);
+  bitanStride = bitanAttrib->stride / sizeof(TempFloat);
+  for(i = 0; i < nVerts; ++i)
+  {
+    tangents[i * tanStride + 0] = 0.0f;
+    tangents[i * tanStride + 1] = 0.0f;
+    tangents[i * tanStride + 2] = 0.0f;
+    bitangents[i * bitanStride + 0] = 0.0f;
+    bitangents[i * bitanStride + 1] = 0.0f;
+    bitangents[i * bitanStride + 2] = 0.0f;
+  }
+
+  for(i = 0; i < nIndices/3; ++i)
+  {
+    const TempFloat *v0, *v1, *v2, *uv0, *uv1, *uv2;
+    TempFloat deltaUV1[2], deltaUV2[2], deltaPos1[3], deltaPos2[3];
+    TempFloat r, coordX, coordY, coordZ;
+    v0 = verts + indices[0] * vertStride;
+    v1 = verts + indices[1] * vertStride;
+    v2 = verts + indices[2] * vertStride;
+    uv0 = texCoords + indices[0] * texStride;
+    uv1 = texCoords + indices[1] * texStride;
+    uv2 = texCoords + indices[2] * texStride;
+  
+    deltaPos1[0] = v1[0] - v0[0];
+    deltaPos1[1] = v1[1] - v0[1];
+    deltaPos1[2] = v1[2] - v0[2];
+  	 
+    deltaPos2[0] = v2[0] - v0[0];
+    deltaPos2[1] = v2[1] - v0[1];
+    deltaPos2[2] = v2[2] - v0[2];
+
+    deltaUV1[0] = uv1[0] - uv0[0];
+    deltaUV1[1] = uv1[1] - uv0[1];
+
+    deltaUV2[0] = uv2[0] - uv0[0];
+    deltaUV2[1] = uv2[1] - uv0[1];
+
+    r = 1.0f / (deltaUV1[0] * deltaUV2[1] - deltaUV1[1] * deltaUV2[0]);
+    coordX = (deltaPos1[0] * deltaUV2[1] - deltaPos2[0] * deltaUV1[1]) * r;
+    coordY = (deltaPos1[1] * deltaUV2[1] - deltaPos2[1] * deltaUV1[1]) * r;
+    coordZ = (deltaPos1[2] * deltaUV2[1] - deltaPos2[2] * deltaUV1[1]) * r;
+
+    tangents[indices[0] * tanStride + 0] += coordX;
+    tangents[indices[0] * tanStride + 1] += coordY;
+    tangents[indices[0] * tanStride + 2] += coordZ;
+    tangents[indices[1] * tanStride + 0] += coordX;
+    tangents[indices[1] * tanStride + 1] += coordY;
+    tangents[indices[1] * tanStride + 2] += coordZ;
+    tangents[indices[2] * tanStride + 0] += coordX;
+    tangents[indices[2] * tanStride + 1] += coordY;
+    tangents[indices[2] * tanStride + 2] += coordZ;
+
+    coordX = (deltaPos2[0] * deltaUV1[0] - deltaPos1[0] * deltaUV2[0]) * r;
+    coordY = (deltaPos2[1] * deltaUV1[0] - deltaPos1[1] * deltaUV2[0]) * r;
+    coordZ = (deltaPos2[2] * deltaUV1[0] - deltaPos1[2] * deltaUV2[0]) * r;
+
+    bitangents[indices[0] * bitanStride + 0] += coordX;
+    bitangents[indices[0] * bitanStride + 1] += coordY;
+    bitangents[indices[0] * bitanStride + 2] += coordZ;
+    bitangents[indices[1] * bitanStride + 0] += coordX;
+    bitangents[indices[1] * bitanStride + 1] += coordY;
+    bitangents[indices[1] * bitanStride + 2] += coordZ;
+    bitangents[indices[2] * bitanStride + 0] += coordX;
+    bitangents[indices[2] * bitanStride + 1] += coordY;
+    bitangents[indices[2] * bitanStride + 2] += coordZ;
+
+    indices += 3;
+  }
+
+  for(i = 0; i < nVerts; ++i)
+  {
+    float len;
+    float dot = tangents[0] * norms[0] + tangents[1] * norms[1] + tangents[2] * norms[2];
+    tangents[0] -= norms[0] * dot; 
+    tangents[1] -= norms[1] * dot; 
+    tangents[2] -= norms[2] * dot; 
+
+    len = (float)sqrt(
+  		     (double)(tangents[0]*tangents[0] +
+                              tangents[1]*tangents[1] +
+			      tangents[2]*tangents[2]));
+    tangents[0] /= len;
+    tangents[1] /= len;
+    tangents[2] /= len;
+	  
+    dot = bitangents[0] * norms[0] + bitangents[1] * norms[1] + bitangents[2] * norms[2];
+    bitangents[0] -= norms[0] * dot; 
+    bitangents[1] -= norms[1] * dot; 
+    bitangents[2] -= norms[2] * dot; 
+	  
+    len = (float)sqrt(
+		     (double)(bitangents[0]*bitangents[0] +
+                              bitangents[1]*bitangents[1] +
+			      bitangents[2]*bitangents[2]));
+    bitangents[0] /= len;
+    bitangents[1] /= len;
+    bitangents[2] /= len;
+
+    norms += normStride;
+    tangents += tanStride;
+    bitangents += bitanStride;
+  }
+}
+
 static void Perspective(TempFloat *mat, TempFloat fov, TempFloat near, TempFloat far, TempFloat aspect)
 {
   mat[0] = (float)atan((double)(fov/2.0f))/aspect;
@@ -178,6 +304,19 @@ static void Identity3v(TempFloat *mat)
   mat[8] = 1;
 }
 
+static void BindVertexAttrib(VertAttrib *attrib)
+{
+  glVertexAttribPointer(attrib->index, attrib->size, attrib->attrib.type, GL_FALSE, attrib->stride, (char *)0 + attrib->attrib.offset);
+  glEnableVertexAttribArray(attrib->index);
+}
+
+static void Translate(TempFloat *mat, TempFloat *vec, TempFloat factor)
+{
+  mat[3] += vec[0] * factor;
+  mat[7] += vec[1] * factor;
+  mat[11] += vec[2] * factor;
+}
+
 void LoadDrawModelView(ProgramTreeNode *drawNode)
 {
   TempUInt handle, vHandle, fHandle;
@@ -209,6 +348,8 @@ void LoadDrawModelView(ProgramTreeNode *drawNode)
   {
     FILE *file;
     char *data;
+    VertAttrib *attribs;
+    int nVertAttribs;
     int nVerts, nIndices;
     file = fopen("testchar", "rb");
     fread(&nVerts, sizeof(int), 1, file);
@@ -221,7 +362,48 @@ void LoadDrawModelView(ProgramTreeNode *drawNode)
     locals->indxCount = nIndices;
 
     {
+      Attrib indexAttrib = {.type = GL_UNSIGNED_INT, .arraySize = nIndices, .offset = 0};
+      nVertAttribs = 5;
+      attribs = (VertAttrib *)malloc(nVertAttribs*sizeof(VertAttrib));
+      attribs[0].index = 0;
+      attribs[0].size = 3;
+      attribs[0].attrib.type = GL_FLOAT;
+      attribs[0].stride = 8 * sizeof(TempFloat);
+      attribs[0].attrib.offset = 0 * sizeof(TempFloat);
+      attribs[0].attrib.arraySize = nVerts;
+      attribs[1].index = 1;
+      attribs[1].size = 2;
+      attribs[1].attrib.type = GL_FLOAT;
+      attribs[1].stride = 8 * sizeof(TempFloat);
+      attribs[1].attrib.offset = 3 * sizeof(TempFloat);
+      attribs[2].index = 2;
+      attribs[2].size = 3;
+      attribs[2].attrib.type = GL_FLOAT;
+      attribs[2].stride = 8 * sizeof(TempFloat);
+      attribs[2].attrib.offset = 5 * sizeof(TempFloat);
+      attribs[3].index = 3;
+      attribs[3].size = 3;
+      attribs[3].attrib.type = GL_FLOAT;
+      attribs[3].stride = 3 * sizeof(TempFloat);
+      attribs[3].attrib.offset = nVerts * 8 * sizeof(TempFloat);
+      attribs[4].index = 4;
+      attribs[4].size = 3;
+      attribs[4].attrib.type = GL_FLOAT;
+      attribs[4].stride = 3 * sizeof(TempFloat);
+      attribs[4].attrib.offset = nVerts * 11 * sizeof(TempFloat);
+
+      GenTangents(data, (const char *)(data + nVerts * 14 * sizeof(float)),
+	          &indexAttrib,
+	          attribs,
+		  attribs + 1,
+		  attribs + 2,
+		  attribs + 3,
+		  attribs + 4);
+      nVertAttribs = 5;
+    }
+    {
       TempUInt VAO, VBO, IBO;
+      int i;
       glGenVertexArrays(1, &VAO);
       glBindVertexArray(VAO);
       glGenBuffers(1, &VBO);
@@ -230,7 +412,9 @@ void LoadDrawModelView(ProgramTreeNode *drawNode)
       glGenBuffers(1, &IBO);
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
       glBufferData(GL_ELEMENT_ARRAY_BUFFER, nIndices * sizeof(unsigned int), data + nVerts * 14 * sizeof(float), GL_STATIC_DRAW);
-      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(TempFloat), 0);
+      for (i = 0; i < nVertAttribs; ++i)
+	BindVertexAttrib(attribs + i);
+      /*glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(TempFloat), 0);
       glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8*sizeof(TempFloat), (char *)0 + 3 * sizeof(TempFloat));
       glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8*sizeof(TempFloat), (char *)0 + 5 * sizeof(TempFloat));
       //glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 3*sizeof(TempFloat), (char *)0 + nVerts * 8 * sizeof(TempFloat));
@@ -240,24 +424,32 @@ void LoadDrawModelView(ProgramTreeNode *drawNode)
       glEnableVertexAttribArray(2);
       //glEnableVertexAttribArray(3);
       //glEnableVertexAttribArray(4);
+      */
       glBindVertexArray(0);
 
       locals->VAO = VAO;
       locals->VBO = VBO;
       locals->IBO = IBO;
     }
+    free(attribs);
     free(data);
   }
 
   locals->texture = LoadTGA("texture_001.tga", 1);
   locals->normalMap = LoadTGA("normals_05.tga", 0);
-  Perspective(locals->projMat, 6.1, 0.1f, 10.0f, 1280.0f/720.0f);
   Identity(locals->projMat);
+  Perspective(locals->projMat, 6.1, 0.1f, 10.0f, 1280.0f/720.0f);
   Identity(locals->viewMat);
+  {
+  TempFloat vec[] = {0.0f, 0.0f, -1.0f};
+  Translate(locals->viewMat, vec, 1.0f);
+  }
   Identity(locals->worldMat);
   Identity3v(locals->normalMat);
 
   glClearColor(0.129f, 0.129f, 0.129f, 1.0f);
+  glEnable(GL_CULL_FACE);
+  glEnable(GL_DEPTH_TEST);
 }
 
 void DrawModelView(ProgramTreeNode *drawProgram)

@@ -2,12 +2,8 @@
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <pthread.h>
 
 #include "window.h"
-
-pthread_barrier_t barrier;
-Window *hackCurrentWindow;
 
 #if OPENGL_DEBUG_OUTPUT
 static void APIENTRY openglCallbackFunction(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam)
@@ -44,8 +40,6 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
-
-    SceneKey((hackCurrentWindow->currentScene), key, action);
 }
 
 
@@ -102,9 +96,6 @@ void InitWindow(Window *window)
 			    1);
     }
 #endif
-
-    hackCurrentWindow = window;
-  pthread_barrier_init(&barrier, NULL, 2);
 }
 
 int ShouldClose(Window *window)
@@ -117,28 +108,14 @@ void WindowMainLoop(Window *window)
   GLFWwindow *glfwWindow = (GLFWwindow *)window->systemWindow;
   while (!glfwWindowShouldClose(glfwWindow))
   {
-    DrawScene(window->currentScene);
-
+    UpdateProgramTree(&(window->programTree), 0.0f);
+    
     glfwSwapBuffers(glfwWindow);
     
     glfwPollEvents();
-
-    SyncThreads();
-    UpdateSceneDrawData(window->currentScene);
-    SyncThreads();
   }
 
   glfwDestroyWindow(glfwWindow);
 
   glfwTerminate();
-}
-
-void SetCurrentScene(Window *window, Scene *scene)
-{
-  window->currentScene = scene;
-}
-
-void SyncThreads(void)
-{
-  pthread_barrier_wait(&barrier);
 }

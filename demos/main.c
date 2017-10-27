@@ -5,11 +5,11 @@
 #include <unistd.h>
 
 #include "../engine/window.h"
-#include "simplemodelview.h"
+#include "modelviewmodule.h"
 
 
 Window window;
-Scene scene;
+/*Scene scene;
 
 void *WorkThread(void *arg);
 void *WorkThread(void *arg)
@@ -37,23 +37,28 @@ void *WorkThread(void *arg)
   }
   return 0;
 }
+*/
 
 int main(void)
 {
-    pthread_t workThreadId;
+  //pthread_t workThreadId;
 
     InitWindow(&window);
-    InitScene(&scene);
-    AddSimpleModelView(&scene);
-    LoadScene(&scene);
-    
-    SetCurrentScene(&window, &scene);
 
-    pthread_create(&workThreadId, 0, WorkThread, 0);
+    StartProgramTree(&(window.programTree), &LoadDrawModelView);
+    //    InitScene(&scene);
+    //AddSimpleModelView(&scene);
+    //LoadScene(&scene);
+    
+    //SetCurrentScene(&window, &scene);
+
+    //StartProgramTree((&window).programTree, &LoadDrawModelView);
+
+    //pthread_create(&workThreadId, 0, WorkThread, 0);
 
     WindowMainLoop(&window);
     
-    pthread_join(workThreadId, 0);
+    //    pthread_join(workThreadId, 0);
 
     exit(EXIT_SUCCESS);
 }

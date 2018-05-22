@@ -6,15 +6,16 @@
 struct ProgramTreeNode;
 struct ProgramTree;
 
-typedef void (*Program)(struct ProgramTreeNode *);
+typedef void (*Program)(void *, void *);
+typedef void (*ResourceProgram)(struct ProgramTreeNode *);
 
 struct ProgramTreeNode
 {
   struct ProgramTreeNode **children;
   TempSizei nChildren;
   Program program;
-  Program loadProgram;
-  Program freeProgram;
+  ResourceProgram loadProgram;
+  ResourceProgram freeProgram;
   void *locals;
   void *out;
 };
@@ -31,7 +32,7 @@ typedef struct
   int maxLevel;
 } ProgramTree;
 
-void StartProgramTree(ProgramTree *programTree, Program rootProgram);
+void StartProgramTree(ProgramTree *programTree, ResourceProgram rootProgram);
 void UpdateProgramTree(ProgramTree *programTree, float deltaTime);
 
 #endif

@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "programtree.h"
 
-void StartProgramTree(ProgramTree *programTree, Program rootProgram)
+void StartProgramTree(ProgramTree *programTree, ResourceProgram rootProgram)
 {
   ProgramTreeNode **currentBranch;
   int currentBranchLevel, *branchesLoaded;
@@ -45,7 +45,7 @@ void UpdateProgramTree(ProgramTree *programTree, float deltaTime)
   {
     if(branchesUpdated[currentBranchLevel] == currentBranch[currentBranchLevel]->nChildren)
     {
-      (*(currentBranch[currentBranchLevel]->program))(currentBranch[currentBranchLevel]);
+      (*(currentBranch[currentBranchLevel]->program))(currentBranch[currentBranchLevel]->locals, currentBranch[currentBranchLevel]->out);
       branchesUpdated[currentBranchLevel--] = 0;
     }
     else

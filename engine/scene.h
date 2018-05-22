@@ -7,6 +7,14 @@ typedef void (*UpdateFunc)(char *modulePointer, double deltaTime);
 typedef void (*DrawFunc)(char *modulePointer);
 typedef void (*KeyFunc)(char *modulePointer, int key, int action);
 
+typedef struct
+{
+  int *key;
+  int *action;
+  TempSizei nKeyEvents;
+  pthread_mutex_t mutex;
+} KeyEvents;
+
 struct Scene
 {
   TempInt sceneType;
@@ -15,7 +23,7 @@ struct Scene
   void (*SetVals[10])(struct Scene *scene, TempInt currentIndex);
   UpdateFunc Update[10];
   KeyFunc Key[10];
-  
+
   DrawFunc Upload[10];
   DrawFunc Draw[10];
   DrawFunc UpdateDrawData[10];
@@ -29,6 +37,8 @@ struct Scene
   char *dataPointer;
   TempSizei usedData;
   TempSizei dataPointerSize;
+
+  KeyEvents keyEvents;
 
   TempSizei nModules;
 };

@@ -65,7 +65,16 @@ void UpdateSceneDrawData(Scene *scene)
 
 void SceneKey(Scene *scene, int key, int action)
 {
-  int i, nModules = scene->nModules;
-  for(i = 0; i < nModules; ++i)
-    scene->Key[i](scene->modulePointers[i], key, action);
+  int *keyArr, *isDown, i, nKeyEvents = scene->keyEvents.nKeyEvents;
+  
+  keyArr = scene->keyEvents.key;
+  isDown = scene->keyEvents.isDown;
+
+  for(i = 0; i < nKeyEvents; ++i)
+  {
+    if(key == *keyArr)
+      *isDown = action == GLFW_PRESS || action == GLEW_REPEAT;
+    ++keyArr;
+    ++isDown;
+  }
 }

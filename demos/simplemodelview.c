@@ -5,14 +5,6 @@
 #include <stdlib.h>
 #include "simplemodelview.h"
 
-const TempFloat verts[] = { 0.0f, 1.0f, 0.0f, 1.0f,
-                            0.4f, 0.3f,
-                            1.0f, -1.0f, 0.0f, 1.0f,
-                            0.4f, 0.3f,
-                            -1.0f, -1.0f, 0.0f, 1.0f,
-                            0.4f, 0.3f};
-const TempInt indices[] = { 0, 1, 2 };
-
 void AddSimpleModelView(Scene *scene)
 {
   scene->modulePointersSize += sizeof(SimpleModelView);
@@ -89,6 +81,129 @@ TempSizei AllocSimpleModelView(Scene *scene, TempInt currentIndex)
   return 0;
 }
 
+/*static void GenTangents(char *vertData, const char *indexData, const Attrib *indexAttrib, const VertAttrib *vertAttrib, const VertAttrib *texCoordAttrib, const VertAttrib *normAttrib, VertAttrib *tanAttrib, VertAttrib *bitanAttrib)
+{
+  int i;
+  TempSizei nIndices, nVerts;
+  	
+  const TempUInt *__restrict__ indices;
+  const TempFloat *__restrict__ texCoords, *__restrict__ norms, *__restrict__ verts;
+  TempFloat *__restrict__ bitangents, *__restrict__ tangents;
+  TempSizei texStride, normStride, vertStride, bitanStride, tanStride;
+  nIndices = indexAttrib->arraySize;
+  nVerts = vertAttrib->attrib.arraySize;
+ 
+  verts = (TempFloat *)(vertData + vertAttrib->attrib.offset);
+  norms = (TempFloat *)(vertData + normAttrib->attrib.offset);
+  texCoords = (TempFloat *)(vertData + texCoordAttrib->attrib.offset);
+  tangents = (TempFloat *)(vertData + tanAttrib->attrib.offset);
+  bitangents = (TempFloat *)(vertData + bitanAttrib->attrib.offset);
+  indices = (TempUInt *)(indexData + indexAttrib->offset);
+  vertStride = vertAttrib->stride / sizeof(TempFloat);
+  texStride = texCoordAttrib->stride / sizeof(TempFloat);
+  normStride = normAttrib->stride / sizeof(TempFloat);
+  tanStride = tanAttrib->stride / sizeof(TempFloat);
+  bitanStride = bitanAttrib->stride / sizeof(TempFloat);
+  for(i = 0; i < 3 * nVerts; ++i)
+  {
+    tangents[i * tanStride] = 0.0f;
+    bitangents[i * bitanStride] = 0.0f;
+  }
+
+  for(i = 0; i < nIndices/3; ++i)
+  {
+    const TempFloat *v0, *v1, *v2, *uv0, *uv1, *uv2;
+    TempFloat deltaUV1[2], deltaUV2[2], deltaPos1[3], deltaPos2[3];
+    TempFloat r, coordX, coordY, coordZ;
+    v0 = verts + indices[0] * vertStride;
+    v1 = verts + indices[1] * vertStride;
+    v2 = verts + indices[2] * vertStride;
+    uv0 = texCoords + indices[0] * texStride;
+    uv1 = texCoords + indices[1] * texStride;
+    uv2 = texCoords + indices[2] * texStride;
+  
+    deltaPos1[0] = v1[0] - v0[0];
+    deltaPos1[1] = v1[1] - v0[1];
+    deltaPos1[2] = v1[2] - v0[2];
+  	 
+    deltaPos2[0] = v2[0] - v0[0];
+    deltaPos2[1] = v2[1] - v0[1];
+    deltaPos2[2] = v2[2] - v0[2];
+
+    deltaUV1[0] = uv1[0] - uv0[0];
+    deltaUV1[1] = uv1[1] - uv0[1];
+
+    deltaUV2[0] = uv2[0] - uv0[0];
+    deltaUV2[1] = uv2[1] - uv0[1];
+
+    r = 1.0f / (deltaUV1[0] * deltaUV2[1] - deltaUV1[1] * deltaUV2[0]);
+    coordX = (deltaPos1[0] * deltaUV2[1] - deltaPos2[0] * deltaUV1[1]) * r;
+    coordY = (deltaPos1[1] * deltaUV2[1] - deltaPos2[1] * deltaUV1[1]) * r;
+    coordZ = (deltaPos1[2] * deltaUV2[1] - deltaPos2[2] * deltaUV1[1]) * r;
+
+    tangents[indices[0] * tanStride + 0] += coordX;
+    tangents[indices[0] * tanStride + 1] += coordY;
+    tangents[indices[0] * tanStride + 2] += coordZ;
+    tangents[indices[1] * tanStride + 0] += coordX;
+    tangents[indices[1] * tanStride + 1] += coordY;
+    tangents[indices[1] * tanStride + 2] += coordZ;
+    tangents[indices[2] * tanStride + 0] += coordX;
+    tangents[indices[2] * tanStride + 1] += coordY;
+    tangents[indices[2] * tanStride + 2] += coordZ;
+
+    coordX = (deltaPos2[0] * deltaUV1[0] - deltaPos1[0] * deltaUV2[0]) * r;
+    coordY = (deltaPos2[1] * deltaUV1[0] - deltaPos1[1] * deltaUV2[0]) * r;
+    coordZ = (deltaPos2[2] * deltaUV1[0] - deltaPos1[2] * deltaUV2[0]) * r;
+
+    bitangents[indices[0] * bitanStride + 0] += coordX;
+    bitangents[indices[0] * bitanStride + 1] += coordY;
+    bitangents[indices[0] * bitanStride + 2] += coordZ;
+    bitangents[indices[1] * bitanStride + 0] += coordX;
+    bitangents[indices[1] * bitanStride + 1] += coordY;
+    bitangents[indices[1] * bitanStride + 2] += coordZ;
+    bitangents[indices[2] * bitanStride + 0] += coordX;
+    bitangents[indices[2] * bitanStride + 1] += coordY;
+    bitangents[indices[2] * bitanStride + 2] += coordZ;
+
+    indices += 3;
+  }
+
+  for(i = 0; i < nVerts; ++i)
+  {
+    float len;
+    float dot = tangents[0] * norms[0] + tangents[1] * norms[1] + tangents[2] * norms[2];
+    tangents[0] -= norms[0] * dot; 
+    tangents[1] -= norms[1] * dot; 
+    tangents[2] -= norms[2] * dot; 
+
+    len = (float)sqrt(
+  		     (double)(tangents[0]*tangents[0] +
+                              tangents[1]*tangents[1] +
+			      tangents[2]*tangents[2]));
+    tangents[0] /= len;
+    tangents[1] /= len;
+    tangents[2] /= len;
+	  
+    dot = bitangents[0] * norms[0] + bitangents[1] * norms[1] + bitangents[2] * norms[2];
+    bitangents[0] -= norms[0] * dot; 
+    bitangents[1] -= norms[1] * dot; 
+    bitangents[2] -= norms[2] * dot; 
+	  
+    len = (float)sqrt(
+		     (double)(bitangents[0]*bitangents[0] +
+                              bitangents[1]*bitangents[1] +
+			      bitangents[2]*bitangents[2]));
+    bitangents[0] /= len;
+    bitangents[1] /= len;
+    bitangents[2] /= len;
+
+    norms += normStride;
+    tangents += tanStride;
+    bitangents += bitanStride;
+  }
+}
+*/
+
 void SetSimpleModelViewVals(Scene *scene, TempInt currentIndex)
 {
   int i, nModules = scene->nModules;
@@ -127,14 +242,14 @@ void SetSimpleModelViewVals(Scene *scene, TempInt currentIndex)
       {
 	int i;
 	TempUInt *__restrict__ indices;
-	TempFloat *verts, *bitangents, *tangents = (TempFloat *)buffers->data[0] + nVerts * 8;
+	TempFloat *__restrict__ verts, *__restrict__ bitangents, *__restrict__ tangents = (TempFloat *)buffers->data[0] + nVerts * 8;
 	verts = (TempFloat *)buffers->data[0];
 	bitangents = (TempFloat *)buffers->data[0] + nVerts * 11;
 	indices = (TempUInt *)buffers->data[1];
-	for(i = 0; i < 3 *nVerts; ++i)
+	for(i = 0; i < 3 * nVerts; ++i)
 	{
-	  bitangents[i] = 0.0f;
 	  tangents[i] = 0.0f;
+	  bitangents[i] = 0.0f;
 	}
 
 	for(i = 0; i < nIndices/3; ++i)
@@ -191,23 +306,40 @@ void SetSimpleModelViewVals(Scene *scene, TempInt currentIndex)
 	  indices += 3;
 	}
 
+	verts += 5;
+
 	for(i = 0; i < nVerts; ++i)
         {
-	  float len = (float)sqrt(
-			     (double)(tangents[i * 3 + 0]*tangents[i * 3 + 0] +
-	                              tangents[i * 3 + 1]*tangents[i * 3 + 1] +
-				      tangents[i * 3 + 2]*tangents[i * 3 + 2]));
-	  tangents[i * 3 + 0] /= len;
-	  tangents[i * 3 + 1] /= len;
-	  tangents[i * 3 + 2] /= len;
+	  float len;
+ 	  float dot = tangents[0] * verts[0] + tangents[1] * verts[1] + tangents[2] * verts[2];
+	  tangents[0] -= verts[0] * dot; 
+	  tangents[1] -= verts[1] * dot; 
+	  tangents[2] -= verts[2] * dot; 
 
 	  len = (float)sqrt(
-			     (double)(bitangents[i * 3 + 0]*bitangents[i * 3 + 0] +
-	                              bitangents[i * 3 + 1]*bitangents[i * 3 + 1] +
-				      bitangents[i * 3 + 2]*bitangents[i * 3 + 2]));
-	  bitangents[i * 3 + 0] /= len;
-	  bitangents[i * 3 + 1] /= len;
-	  bitangents[i * 3 + 2] /= len;
+			     (double)(tangents[0]*tangents[0] +
+	                              tangents[1]*tangents[1] +
+				      tangents[2]*tangents[2]));
+	  tangents[0] /= len;
+	  tangents[1] /= len;
+	  tangents[2] /= len;
+	  
+ 	  dot = bitangents[0] * verts[0] + bitangents[1] * verts[1] + bitangents[2] * verts[2];
+	  bitangents[0] -= verts[0] * dot; 
+	  bitangents[1] -= verts[1] * dot; 
+	  bitangents[2] -= verts[2] * dot; 
+	  
+	  len = (float)sqrt(
+			     (double)(bitangents[0]*bitangents[0] +
+	                              bitangents[1]*bitangents[1] +
+				      bitangents[2]*bitangents[2]));
+	  bitangents[0] /= len;
+	  bitangents[1] /= len;
+	  bitangents[2] /= len;
+
+	  verts += 8;
+	  tangents += 3;
+	  bitangents += 3;
 	}
       }
     }
@@ -339,36 +471,6 @@ static GLuint CompileShader(const char *filename, GLenum shaderType)
   
   return shader;
 }
-
-/*
-static GLuint CompileShader(const GLchar **shaderSource, GLenum shaderType, GLint len)
-{
-  GLuint shader = glCreateShader(shaderType);
-  glShaderSource(shader, 1, shaderSource, &len);
-  glCompileShader(shader);
-  {
-    GLint compiled;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-    if(!compiled)
-    {
-      GLchar log[1024];
-      GLint blen = 0;	
-      GLsizei slen = 0;
-
-      glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &blen);       
-
-      if (blen > 1)
-      {
-        glGetShaderInfoLog(shader, 1024, &slen, log);
-        printf("Failed to compile shader:\n%s\n", log);
-      }	
-      glDeleteShader(shader);
-      shader = 0;
-    }
-  }
-  return shader;
-}
-*/
 
 static void Perspective(TempFloat *mat, TempFloat fov, TempFloat near, TempFloat far, TempFloat aspect)
 {
@@ -538,7 +640,7 @@ static void RotateAlongX(TempFloat *mat, TempFloat angle)
 
   memcpy(mat, tempMat, sizeof(TempFloat) *16);
 }
-static void RotateAlongX3v(TempFloat *mat, TempFloat angle)
+/*static void RotateAlongX3v(TempFloat *mat, TempFloat angle)
 {
   TempFloat tempMat[9];
   TempFloat rotMat[] = {1.0f, 0.0f, 0.0f,
@@ -564,7 +666,7 @@ static void RotateAlongX3v(TempFloat *mat, TempFloat angle)
 
   memcpy(mat, tempMat, sizeof(TempFloat) * 9);
 }
-
+*/
 static void RotateAlongY3v(TempFloat *mat, TempFloat angle)
 {
   TempFloat tempMat[9];
@@ -637,34 +739,24 @@ static void Translate(TempFloat *mat, TempFloat *vec, TempFloat factor)
 }
 void UpdateSimpleModelView(char *passTypePointer, double deltaTime)
 {
+  int i, *keyDown;
+  TempFloat *rot;
   SimpleModelView *simpleModelView = (SimpleModelView *)passTypePointer;
+  keyDown = simpleModelView->keyDown;
   simpleModelView->rotation += deltaTime;
   if(simpleModelView->rotation > 3.14159265f * 2.0f)
     simpleModelView->rotation -= 3.14159265f * 2.0f;
   
-  if(simpleModelView->wKeyDown)
+  rot = simpleModelView->camera.rot;
+  for(i = 0; i < 2; ++i)
   {
-    simpleModelView->camera.rotAlongX -= deltaTime;
-    if(simpleModelView->camera.rotAlongX < 0.0f)
-      simpleModelView->camera.rotAlongX += 3.14159265f * 2.0f;
-  }
-  if(simpleModelView->sKeyDown)
-  {
-    simpleModelView->camera.rotAlongX += deltaTime;
-    if(simpleModelView->camera.rotAlongX > 3.14159265f * 2.0f)
-      simpleModelView->camera.rotAlongX -= 3.14159265f * 2.0f;
-  }
-  if(simpleModelView->aKeyDown)
-  {
-    simpleModelView->camera.rotAlongY -= deltaTime;
-    if(simpleModelView->camera.rotAlongY < 0.0f)
-      simpleModelView->camera.rotAlongY += 3.14159265f * 2.0f;
-  }
-  if(simpleModelView->dKeyDown)
-  {
-    simpleModelView->camera.rotAlongY += deltaTime;
-    if(simpleModelView->camera.rotAlongY > 3.14159265f * 2.0f)
-      simpleModelView->camera.rotAlongY -= 3.14159265f * 2.0f;
+    *rot += deltaTime * (TempFloat)(keyDown[0] - keyDown[1]);
+    if(*rot < 0.0f)
+      *rot += 3.14159265f * 2.0f;
+    else if(*rot > 3.14159265f * 2.0f)
+      *rot -= 3.14159265f * 2.0f;
+    ++rot;
+    keyDown += 2;
   }
 
   if(simpleModelView->upKeyDown || simpleModelView->downKeyDown || simpleModelView->leftKeyDown || simpleModelView->rightKeyDown)
@@ -713,15 +805,10 @@ void DrawSimpleModelView(char *passTypePointer)
 {
   const TempFloat *projMatPtr, *worldMatPtr, *viewMatPtr, *normalMatPtr;
   SimpleModelView *simpleModelView = (SimpleModelView *)passTypePointer;
-  TempFloat lightPos[4]; 
-  lightPos[4] = 1.0f;
-  memcpy(lightPos, simpleModelView->light.position, 3*sizeof(float));
   projMatPtr = simpleModelView->camera.projMat;
   viewMatPtr = simpleModelView->camera.viewMat;
   worldMatPtr = simpleModelView->worldMat;
   normalMatPtr = simpleModelView->normalMat;
-
-  Multiply(viewMatPtr, lightPos);
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glEnable(GL_FRAMEBUFFER_SRGB);
@@ -733,7 +820,7 @@ void DrawSimpleModelView(char *passTypePointer)
   glUniformMatrix4fv(simpleModelView->camera.projMatLocation, GL_TRUE, 1, projMatPtr);
   glUniformMatrix4fv(simpleModelView->camera.viewMatLocation, GL_TRUE, 1, viewMatPtr);
   glUniformMatrix3fv(simpleModelView->normalMatLocation, GL_TRUE, 1, normalMatPtr);
-  glUniform3fv(simpleModelView->light.lightPosLocation, 1, lightPos);
+  glUniform3fv(simpleModelView->light.lightPosLocation, 1, simpleModelView->light.position);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, simpleModelView->texture);
   glActiveTexture(GL_TEXTURE1);
@@ -756,10 +843,10 @@ void UpdateSimpleModelViewDrawData(char *passTypePointer)
   Identity(simpleModelView->camera.viewMat);
   Translate(simpleModelView->camera.viewMat, simpleModelView->camera.location, -1.0f);
   RotateAlongY(simpleModelView->camera.viewMat, -simpleModelView->camera.rotAlongY);
-  RotateAlongY3v(simpleModelView->normalMat, -simpleModelView->camera.rotAlongY);
+  //RotateAlongY3v(simpleModelView->normalMat, -simpleModelView->camera.rotAlongY);
   RotateAlongX(simpleModelView->camera.viewMat, -simpleModelView->camera.rotAlongX);
-  RotateAlongX3v(simpleModelView->normalMat, -simpleModelView->camera.rotAlongX);
-
+  //RotateAlongX3v(simpleModelView->normalMat, -simpleModelView->camera.rotAlongX);
+  
 }
 
 void SimpleModelViewKey(char *passTypePointer, int key, int action)

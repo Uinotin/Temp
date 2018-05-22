@@ -2,6 +2,23 @@
 #define SIMPLEMODELVIEW_H
 
 #include "../engine/buffers.h"
+
+typedef struct
+{
+  TempEnum type;
+  TempSizei arraySize;
+  TempInt offset;
+} Attrib;
+
+typedef struct
+{
+  Attrib attrib;
+  TempUInt index;
+  TempInt size;
+  TempSizei stride;
+
+} VertAttrib;
+
 typedef struct
 {
   TempUInt viewMatLocation;
@@ -44,7 +61,8 @@ typedef struct
   SimpleCamera camera;
 
   SimpleLight light;
-  
+
+  int *keyDown;
   int upKeyDown;
   int downKeyDown;
   int leftKeyDown;

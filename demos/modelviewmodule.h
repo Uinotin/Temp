@@ -29,14 +29,12 @@ typedef struct
     texture, normalMap;
   TempInt vertCount, indxCount;
 
-
-  
   TempFloat projMat[16], worldMat[16], viewMat[16], normalMat[9], lightPosition[3];
 } DrawModelViewData;
 
 
 void LoadDrawModelView(ProgramTreeNode *drawNode);  
-void DrawModelView(ProgramTreeNode *drawNode);
+void DrawModelView(void *locals, void *out);
 void FreeDrawModelView(ProgramTreeNode *drawNode);
 
 #endif

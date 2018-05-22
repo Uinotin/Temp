@@ -322,8 +322,8 @@ void LoadDrawModelView(ProgramTreeNode *drawNode)
   TempUInt handle, vHandle, fHandle;
   DrawModelViewData *locals;
   drawNode->children = 0;
-  drawNode->locals = (void *)malloc(sizeof(DrawModelViewData));
   drawNode->nChildren = 0;
+  drawNode->locals = (void *)malloc(sizeof(DrawModelViewData));
   drawNode->program = *DrawModelView;
   drawNode->freeProgram = *FreeDrawModelView;
 
@@ -441,7 +441,7 @@ void LoadDrawModelView(ProgramTreeNode *drawNode)
   Perspective(locals->projMat, 6.1, 0.1f, 10.0f, 1280.0f/720.0f);
   Identity(locals->viewMat);
   {
-  TempFloat vec[] = {0.0f, 0.0f, -1.0f};
+    TempFloat vec[] = {0.0f, -0.5f, -0.7f};
   Translate(locals->viewMat, vec, 1.0f);
   }
   Identity(locals->worldMat);
@@ -452,10 +452,10 @@ void LoadDrawModelView(ProgramTreeNode *drawNode)
   glEnable(GL_DEPTH_TEST);
 }
 
-void DrawModelView(ProgramTreeNode *drawProgram)
+void DrawModelView(void *locals, void *out)
 {
   const TempFloat *projMatPtr, *worldMatPtr, *viewMatPtr, *normalMatPtr;
-  DrawModelViewData *drawData = (DrawModelViewData *)(drawProgram->locals);
+  DrawModelViewData *drawData = (DrawModelViewData *)(locals);
   projMatPtr = drawData->projMat;
   viewMatPtr = drawData->viewMat;
   worldMatPtr = drawData->worldMat;

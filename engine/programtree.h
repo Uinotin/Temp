@@ -33,6 +33,6 @@ typedef struct
 } ProgramTree;
 
 void StartProgramTree(ProgramTree *programTree, ResourceProgram rootProgram);
-void UpdateProgramTree(ProgramTree *programTree, float deltaTime);
+void UpdateProgramTree(ProgramTree *programTree);
 
 #endif

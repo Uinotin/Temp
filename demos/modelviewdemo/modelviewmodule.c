@@ -23,7 +23,7 @@ static GLuint CompileShader(const char *filename, GLenum shaderType)
   else
   {
     do {
-      assert(stringIndex < stringSize);
+      assert(stringIndex < 4096);
       fileString[stringIndex] = fgetc (file);
     } while (fileString[stringIndex++] != EOF);
     fileString[--stringIndex] = 0;
@@ -442,7 +442,7 @@ void LoadDrawModelView(ProgramTreeNode *drawNode)
   Identity(locals->viewMat);
   {
     TempFloat vec[] = {0.0f, -0.5f, -0.7f};
-  Translate(locals->viewMat, vec, 1.0f);
+    Translate(locals->viewMat, vec, 1.0f);
   }
   Identity(locals->worldMat);
   Identity3v(locals->normalMat);

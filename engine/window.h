@@ -9,7 +9,7 @@ typedef struct
   char *systemWindow;
 } Window;
 
-void InitWindow(Window *window);
+void InitWindow(Window *window, const char *name);
 int ShouldClose(Window *window);
 void WindowMainLoop(Window *window);
 

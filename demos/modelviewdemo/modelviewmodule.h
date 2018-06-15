@@ -1,7 +1,7 @@
 #ifndef MODELVIEWMODULE_H
 #define MODELVIEWMODULE_H
 
-#include "../engine/programtree.h"
+#include "programtree.h"
 
 typedef struct
 {

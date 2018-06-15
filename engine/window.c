@@ -43,7 +43,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 }
 
 
-void InitWindow(Window *window)
+void InitWindow(Window *window, const char *name)
 {
   GLFWwindow* glfwWindow;
   glfwSetErrorCallback(error_callback);
@@ -59,7 +59,7 @@ void InitWindow(Window *window)
   glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  glfwWindow = glfwCreateWindow(1280, 720, "Temp", NULL, NULL);
+  glfwWindow = glfwCreateWindow(1280, 720, name, NULL, NULL);
   if (!glfwWindow)
   {
     glfwTerminate();
@@ -108,7 +108,7 @@ void WindowMainLoop(Window *window)
   GLFWwindow *glfwWindow = (GLFWwindow *)window->systemWindow;
   while (!glfwWindowShouldClose(glfwWindow))
   {
-    UpdateProgramTree(&(window->programTree), 0.0f);
+    UpdateProgramTree(&(window->programTree));
     
     glfwSwapBuffers(glfwWindow);
     

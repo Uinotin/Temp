@@ -31,7 +31,7 @@ void StartProgramTree(ProgramTree *programTree, ResourceProgram rootProgram)
   programTree->nPrograms = 0;
 }
 
-void UpdateProgramTree(ProgramTree *programTree, float deltaTime)
+void UpdateProgramTree(ProgramTree *programTree)
 {
   ProgramTreeNode **currentBranch;
   int *branchesUpdated;
@@ -56,3 +56,4 @@ void UpdateProgramTree(ProgramTree *programTree, float deltaTime)
     }
   }
 }
+
